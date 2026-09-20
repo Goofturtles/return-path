@@ -633,21 +633,79 @@
 
   Array.prototype.forEach.call(document.querySelectorAll('[data-disclosure]'), initDisclosure);
 
-  // The sky simply fades as you leave the hero. No parallax: a background
-  // that moves at its own speed fights the content instead of framing it.
+  // Parallax. Stronger than before: the sky keeps most of the page's own
+  // movement so it hangs in frame, and each plate drifts against the scroll.
+  //
+  // Values are lerped toward their targets rather than snapped, so motion
+  // keeps settling after you stop - that is what makes it feel weighted.
+  // Native scrolling is untouched; hijacking the wheel would break the
+  // report's own scroll-into-view and the scrollbar.
   (function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     var sky = document.querySelector('.sky');
-    if (!sky || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var ticking = false;
-    function apply() {
-      ticking = false;
-      var t = Math.min((window.scrollY || window.pageYOffset) / 520, 1);
-      sky.style.opacity = String(1 - t * t);
+    var SKY_LAG = 0.86;     // holds almost with the page, so it really lingers
+    var SKY_FADE = 900;
+
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll('[data-par]'), function (n) {
+      items.push({ node: n, rate: parseFloat(n.getAttribute('data-par')) || 0.2, cur: 0, mid: 0, skip: false });
+    });
+
+    var skyCur = 0, skyOp = 1;
+    var EASE = 0.32;      // converges in a handful of frames, still smooth
+    var rafId = 0;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function frame() {
+      var y = window.scrollY || window.pageYOffset;
+      var vh = window.innerHeight;
+      var i;
+
+      // read pass first: a rect read after a transform write forces a layout
+      // flush for every element, every frame.
+      for (i = 0; i < items.length; i++) {
+        var r = items[i].node.getBoundingClientRect();
+        items[i].skip = (r.bottom < -400 || r.top > vh + 400);
+        if (items[i].skip) continue;
+        var mid = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
+        items[i].mid = Math.max(-1, Math.min(1, mid));
+      }
+
+      // write pass
+      if (sky) {
+        var t = Math.min(y / SKY_FADE, 1);
+        skyCur = lerp(skyCur, y * SKY_LAG, EASE);
+        skyOp = lerp(skyOp, 1 - t * t, EASE);
+        if (t >= 1 && skyOp < 0.01) {
+          sky.style.visibility = 'hidden';
+        } else {
+          sky.style.visibility = 'visible';
+          // Positive: pushed back down as the page rises, so it stays in
+          // frame. Negative would rush it off the top.
+          sky.style.transform = 'translate3d(0,' + skyCur.toFixed(1) + 'px,0)';
+          sky.style.opacity = skyOp.toFixed(3);
+        }
+      }
+      for (i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it.skip) continue;
+        it.cur = lerp(it.cur, it.mid * it.rate * 100, EASE);
+        it.node.style.transform = 'translate3d(0,' + it.cur.toFixed(1) + 'px,0)';
+      }
+
+      rafId = requestAnimationFrame(frame);
     }
-    window.addEventListener('scroll', function () {
-      if (!ticking) { ticking = true; requestAnimationFrame(apply); }
-    }, { passive: true });
-    apply();
+
+    // Cancel by handle. Flagging it as paused leaves the frame queued, so the
+    // restore below would schedule a SECOND loop and every hide/show doubles.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { cancelAnimationFrame(rafId); rafId = 0; }
+      else if (!rafId) { rafId = requestAnimationFrame(frame); }
+    });
+
+    rafId = requestAnimationFrame(frame);
   })();
 
   // The blueprint panel advances on its own, so there is always something

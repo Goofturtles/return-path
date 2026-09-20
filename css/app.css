@@ -121,12 +121,6 @@ kbd {
 /* Clears the centre so the headline sits on clean black and the cloud is left
    framing the corners. Painted in the page colour rather than masked, because
    compositing two masks is what caused the band above. */
-.sky::after {
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 46% 125% at 50% 76%,
-      var(--bg) 0%, rgba(7, 8, 9, .90) 30%, rgba(7, 8, 9, .34) 62%, transparent 86%);
-}
-
 .cloud {
   position: absolute; top: 0; left: 0;
   width: calc(var(--tile) * 3); height: 100%;
@@ -162,16 +156,6 @@ kbd {
 
 /* A cool wash at the very top edge, the way Bolt and Cosmos light a dark
    hero: colour at the boundary, nothing in the middle. */
-.hero::before {
-  content: ""; position: absolute; z-index: 0; pointer-events: none;
-  top: -220px; left: 50%; transform: translateX(-50%);
-  width: min(1500px, 120%); height: 460px;
-  background:
-    radial-gradient(ellipse 40% 60% at 22% 60%, rgba(95,216,203,.13), transparent 70%),
-    radial-gradient(ellipse 42% 62% at 78% 56%, rgba(78,132,224,.12), transparent 72%);
-  filter: blur(42px);
-}
-
 /* Fine film grain. Keeps large flat areas of near-black from looking like a
    default background, which is most of what reads as "generated". */
 .grain {
@@ -187,8 +171,8 @@ body::before {
     linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
   background-size: 76px 76px;
   opacity: .5;
-  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 10%, transparent 72%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 10%, transparent 72%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%);
 }
 
 main, .topbar, .foot { position: relative; z-index: 1; }
@@ -215,6 +199,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   transition-delay: var(--d, 0ms);
 }
 .reveal.in { opacity: 1; transform: none; }
+.reveal[data-par], .reveal-l[data-par], .reveal-r[data-par] { transform: none; }
 
 /* Directional variants, so a two-column section resolves inward rather than
    both halves rising in parallel. */
@@ -260,10 +245,6 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 .offline-badge .dot {
   width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none;
-}
-@keyframes glowPulse {
-  0%, 100% { opacity: .75; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.06); }
 }
 
 /* box-shadow repaints every frame; a transformed pseudo-element is free. */
@@ -503,8 +484,8 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 .disclosure-body > * { margin-top: 0; }
 
-.help { margin: 18px auto 0; max-width: 62ch; }
-.help .disclosure-head { margin: 0 auto; }
+.help { margin: 20px 0 0; max-width: 62ch; }
+.help .disclosure-head { margin: 0; }
 .help-dl {
   margin: 12px 0 0;
   background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
@@ -552,10 +533,10 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 .verdict[data-level="unverified"]::before    { background: var(--medium); }
 .verdict[data-level="authenticated"]::before { background: var(--good); }
 
-.verdict[data-level="forged"]        { background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(255,107,107,.08), var(--panel) 62%); }
-.verdict[data-level="suspicious"]    { background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(255,159,69,.08), var(--panel) 62%); }
-.verdict[data-level="unverified"]    { background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(240,201,72,.07), var(--panel) 62%); }
-.verdict[data-level="authenticated"] { background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(69,212,137,.08), var(--panel) 62%); }
+.verdict[data-level="forged"]        { background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%); }
+.verdict[data-level="suspicious"]    { background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%); }
+.verdict[data-level="unverified"]    { background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%); }
+.verdict[data-level="authenticated"] { background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 42%, transparent 78%); }
 
 .verdict-left { min-width: 0; }
 .verdict-right { min-width: 0; border-left: 1px solid var(--line); padding-left: 32px; }
@@ -1021,13 +1002,6 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   background: linear-gradient(170deg, var(--panel) 0%, var(--bg-2) 60%);
   padding: 54px 52px 48px;
 }
-.privacy-glow {
-  position: absolute; left: 76%; top: -60%;
-  width: 520px; height: 520px; pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, rgba(95,216,203,.16), transparent 66%);
-  filter: blur(26px);
-  animation: glowPulse 9s ease-in-out infinite;
-}
 .privacy-card > * { position: relative; }
 .privacy-card h2 { margin-bottom: 22px; }
 .privacy-lede { color: var(--ink-2); font-size: 1rem; line-height: 1.72; max-width: 58ch; }
@@ -1107,15 +1081,32 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   display: block; width: 100%; height: auto;
   border: 1px solid var(--line); border-radius: 14px;
   background: var(--panel);
-  box-shadow: 0 30px 70px -28px rgba(0,0,0,.92), 0 0 90px -50px rgba(95,216,203,.35);
+  box-shadow: none;
   transition: transform .6s var(--ease);
 }
-.showcase-shot::after {
-  content: ""; position: absolute; inset: -18% -8% auto -8%; height: 62%;
-  background: radial-gradient(ellipse 50% 60% at 50% 100%, rgba(95,216,203,.13), transparent 70%);
-  filter: blur(30px); pointer-events: none; z-index: -1;
-}
+
 .showcase-shot:hover img { transform: translateY(-5px); }
+
+/* product plates -----------------------------------------------------------
+   Linear's move: a headline, a line of copy, then a large real screenshot of
+   the product doing the thing. No illustration and no glow behind it - the
+   product is the image. */
+
+.lede-shot { max-width: var(--maxw); margin: 0 auto; padding: 72px 28px 0; }
+.lede-shot-copy { max-width: 44rem; margin-bottom: 28px; }
+.lede-shot-copy h2 {
+  font-family: var(--sans); font-weight: 700;
+  font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.12;
+  letter-spacing: -0.03em; color: #f2f5fa; margin: 0 0 12px;
+}
+.lede-shot-copy p { color: var(--ink-3); font-size: .97rem; line-height: 1.65; max-width: 54ch; margin: 0; }
+
+.plate { margin: 0; will-change: transform; }
+.plate img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel);
+}
 
 /* blueprint --------------------------------------------------------------
    Garden's register: a technical drawing with measurement callouts, a scan
@@ -1130,6 +1121,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 
 .blueprint {
+  will-change: transform;
   border: 1px solid var(--line); border-radius: 15px;
   background: var(--bg-2); overflow: hidden; position: relative;
 }
@@ -1258,34 +1250,6 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 /* photographs */
 
-.privacy-photo {
-  position: absolute; inset: -12% 0; width: 100%; height: 124%;
-  will-change: transform;
-  object-fit: cover; opacity: .10; pointer-events: none;
-  -webkit-mask-image: radial-gradient(ellipse 80% 90% at 82% 30%, #000, transparent 72%);
-  mask-image: radial-gradient(ellipse 80% 90% at 82% 30%, #000, transparent 72%);
-}
-
-.limits-photo { margin: 0 0 44px; position: relative; will-change: transform; }
-.photo-frame {
-  display: block; overflow: hidden;
-  border: 1px solid var(--line); border-radius: 15px;
-  height: clamp(200px, 30vw, 330px);
-}
-.limits-photo img {
-  display: block; width: 100%;
-  /* Taller than the frame, so there is room to travel inside it. */
-  height: calc(clamp(200px, 30vw, 330px) + 130px);
-  margin-top: -65px;
-  object-fit: cover;
-  filter: brightness(.62) saturate(.75);
-  will-change: transform;
-}
-.limits-photo figcaption {
-  margin-top: 13px; color: var(--ink-4);
-  font-size: .85rem; line-height: 1.65; max-width: 62ch;
-}
-
 /* limits */
 
 .limits { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; max-width: 78ch; }
@@ -1299,14 +1263,14 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 /* cta */
 
-.cta { padding: 72px 28px 90px; text-align: center; }
+.cta { padding: 72px 28px 90px; text-align: left; }
 .cta h2 {
   font-family: var(--sans); font-weight: 600;
   font-size: clamp(2.1rem, 5vw, 3.4rem); line-height: 1.08;
   color: #f4f7fb; margin: 0 0 30px; padding-bottom: .05em;
 }
 .cta h2 em { font-style: normal; color: var(--accent-2); }
-.cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.cta-row { display: flex; gap: 10px; justify-content: flex-start; flex-wrap: wrap; }
 
 /* ══════════════════════════════════════════════ footer */
 
@@ -1364,14 +1328,13 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   .showcase { padding: 44px 16px; }
   .how { padding: 48px 16px; }
   .spec { padding: 48px 16px; }
+  .lede-shot { padding: 48px 16px 0; }
   .how-art { height: 170px; }
   .bento { grid-template-columns: 1fr; gap: 12px; }
   .bcard-wide { grid-column: span 1; }
   .bcard-art { height: 150px; }
   .ticker-run { font-size: .74rem; gap: 16px; }
-  .limits-photo { margin-bottom: 30px; }
-
-  body { font-size: 15px; }
+    body { font-size: 15px; }
   .topbar { padding: 16px; gap: 12px; }
   .topbar-right { gap: 14px; }
   .results { padding: 4px 16px 36px; }
