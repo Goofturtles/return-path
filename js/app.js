@@ -381,65 +381,6 @@
 
   /* ------------------------------------------------------------ annotated body */
 
-  var ENTITIES = {
-    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–',
-    mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘',
-    ldquo: '“', rdquo: '”', copy: '©', reg: '®', trade: '™'
-  };
-
-  function decodeEntities(s) {
-    return s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, function (m, body) {
-      if (body[0] === '#') {
-        var code = body[1] === 'x' || body[1] === 'X'
-          ? parseInt(body.slice(2), 16)
-          : parseInt(body.slice(1), 10);
-        if (!isFinite(code) || code < 9 || code > 0x10ffff) return m;
-      // Private-use area is where our link placeholders live; never let an
-      // entity decode into one.
-      if (code >= 0xE000 && code <= 0xF8FF) return m;
-        try { return String.fromCodePoint(code); } catch (e) { return m; }
-      }
-      var v = ENTITIES[body.toLowerCase()];
-      return v === undefined ? m : v;
-    });
-  }
-
-  var OPEN = '', CLOSE = '';
-
-  // Turn an HTML part into plain text with link placeholders. No parsing into
-  // the DOM, no innerHTML — the markup is treated as a string throughout.
-  function flatten(html) {
-    // Both the stripping and the anchor pattern come from the engine. If this
-    // file kept its own copies they would drift, and a link the engine skipped
-    // but the renderer tokenised would shift every later placeholder — making
-    // the annotated view attribute the wrong destination to a visible link.
-    // Strip any private-use characters the message carried before inserting
-     // our own, so the body cannot forge a placeholder and hijack a link.
-    var out = RP.stripNonContent(String(html).replace(/[\uE000-\uF8FF]/g, ''));
-
-    var i = 0;
-    out = out.replace(RP.anchorRegex(), function () {
-      var token = OPEN + i + CLOSE;
-      i++;
-      return token;
-    });
-
-    out = out
-      .replace(/<\s*br\s*\/?>/gi, '\n')
-      .replace(/<\/\s*(p|div|tr|li|h[1-6]|table|blockquote)\s*>/gi, '\n')
-      .replace(/<\s*(p|div|tr|li|h[1-6]|table|blockquote)\b[^>]*>/gi, '\n')
-      .replace(/<[^>]*>/g, '');
-
-    out = decodeEntities(out)
-      .replace(/ /g, ' ')
-      .replace(/[ \t]+/g, ' ')
-      .replace(/ *\n */g, '\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-
-    return out;
-  }
-
   function riskOf(link) {
     var f = link.flags || [];
     if (f.indexOf('text-mismatch') !== -1 || f.indexOf('userinfo') !== -1 ||
@@ -504,7 +445,7 @@
     $('messagePanel').hidden = false;
 
     var text = html
-      ? flatten(html.decoded)
+      ? RP.flattenBody(html.decoded)
       : String(plain.decoded).replace(/\n{3,}/g, '\n\n').trim();
 
     // Only the links from the part being shown, in the order they appear in it.
@@ -525,7 +466,7 @@
       return;
     }
 
-    var re = new RegExp(OPEN + '(\\d+)' + CLOSE, 'g');
+    var re = new RegExp(RP.TOKEN_OPEN + '(\\d+)' + RP.TOKEN_CLOSE, 'g');
     var last = 0, m;
     while ((m = re.exec(text)) !== null) {
       if (m.index > last) box.appendChild(document.createTextNode(text.slice(last, m.index)));

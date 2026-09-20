@@ -601,6 +601,73 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 7b. Body flattening
+   *
+   * The annotated view never renders a message's HTML. The markup is reduced
+   * to plain text as a *string* — never parsed into a document — with each
+   * anchor replaced by a placeholder the renderer swaps for its own element.
+   * This lives in the engine rather than the view so it shares one anchor
+   * pattern with extractLinks(); two copies would drift, and a link the
+   * engine skipped but the renderer tokenised would shift every later
+   * placeholder, making the view report the wrong destination for a link.
+   * ------------------------------------------------------------------ */
+
+  var TOKEN_OPEN = '\uE000';
+  var TOKEN_CLOSE = '\uE001';
+
+  var ENTITIES = {
+    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+    ndash: '\u2013', mdash: '\u2014', hellip: '\u2026',
+    rsquo: '\u2019', lsquo: '\u2018', ldquo: '\u201c', rdquo: '\u201d',
+    copy: '\u00a9', reg: '\u00ae', trade: '\u2122'
+  };
+
+  function decodeEntities(s) {
+    return String(s).replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, function (m, body) {
+      if (body[0] === '#') {
+        var code = body[1] === 'x' || body[1] === 'X'
+          ? parseInt(body.slice(2), 16)
+          : parseInt(body.slice(1), 10);
+        if (!isFinite(code) || code < 9 || code > 0x10ffff) return m;
+        // The private-use area is where the link placeholders live. A body
+        // that could decode into one could mint its own placeholder and make
+        // the annotated view attribute a link to the wrong destination.
+        if (code >= 0xE000 && code <= 0xF8FF) return m;
+        try { return String.fromCodePoint(code); } catch (e) { return m; }
+      }
+      var key = body.toLowerCase();
+      // Own-property check: otherwise '&constructor;' resolves up the
+      // prototype chain and prints a function body into the message.
+      if (!Object.prototype.hasOwnProperty.call(ENTITIES, key)) return m;
+      return ENTITIES[key];
+    });
+  }
+
+  function flattenBody(html) {
+    // Strip any private-use characters the message already carried before
+    // inserting our own, so a raw one cannot forge a placeholder either.
+    var out = stripNonContent(String(html).replace(/[\uE000-\uF8FF]/g, ''));
+
+    var i = 0;
+    out = out.replace(anchorRegex(), function () {
+      return TOKEN_OPEN + (i++) + TOKEN_CLOSE;
+    });
+
+    out = out
+      .replace(/<\s*br\s*\/?>/gi, '\n')
+      .replace(/<\/\s*(p|div|tr|li|h[1-6]|table|blockquote)\s*>/gi, '\n')
+      .replace(/<\s*(p|div|tr|li|h[1-6]|table|blockquote)\b[^>]*>/gi, '\n')
+      .replace(/<[^>]*>/g, '');
+
+    return decodeEntities(out)
+      .replace(/\u00a0/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/ *\n */g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  /* ------------------------------------------------------------------ *
    * 8. Findings
    * ------------------------------------------------------------------ */
 
@@ -1208,6 +1275,10 @@
     parseAuthResults: parseAuthResults,
     stripNonContent: stripNonContent,
     anchorRegex: anchorRegex,
+    flattenBody: flattenBody,
+    decodeEntities: decodeEntities,
+    TOKEN_OPEN: TOKEN_OPEN,
+    TOKEN_CLOSE: TOKEN_CLOSE,
     parseHops: parseHops,
     levenshtein: levenshtein,
     BRANDS: BRANDS

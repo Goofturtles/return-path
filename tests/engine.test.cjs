@@ -305,6 +305,9 @@ t('headers only, no body, does not throw', () => {
   const r = RP.analyze('From: a@b.com\nSubject: hi\nDate: Thu, 17 Sep 2026 06:12:40 -0400');
   eq(r.ok, true);
   eq(r.links.length, 0);
+  // No authentication and no Received chain: nothing incriminating, nothing
+  // vouching either. This pins the fourth verdict tier.
+  eq(r.verdict.level, 'unverified');
 });
 
 t('a malformed mess does not throw', () => {
@@ -347,6 +350,12 @@ t('a brand name on an implausible TLD still fires', () => {
 t('brand names embedded in ordinary words do not fire', () => {
   ['purchase.com', 'pineapple.com', 'canadagoose.com', 'chasing-cars.com', 'applesauce.org']
     .forEach(d => eq(RP.lookalike(d), null, d + ' should not be a lookalike'));
+});
+
+t('confusable folding does not invent matches in ordinary domains', () => {
+  // skeleton() folds rn->m and vv->w; these must not become brand hits.
+  ['corner-bakery.com', 'modern-living.com', 'savvy-finance.com', 'governor.org']
+    .forEach(d => eq(RP.lookalike(d), null, d + ' should survive confusable folding'));
 });
 
 t('short brands do not generate nonsense near-misses', () => {
@@ -461,22 +470,57 @@ t('engine and renderer agree on which anchors count', () => {
   void huge;
 });
 
-t('a body cannot forge a link placeholder', () => {
-  // The renderer marks links with private-use characters. A message that
-  // carries its own - raw, or as a numeric entity - must not be able to mint
-  // a token and so make the annotated view point at a different link.
-  const html = '<p>1 and &#xE000;1&#xE001;</p>' +
-    '<a href="https://real.test/a">only link</a>';
-  const links = RP.extractLinks([{ type: 'text/html', decoded: html }]);
-  eq(links.length, 1, 'the fake tokens are not links');
-  eq(links[0].host, 'real.test');
+/* ---------- body flattening ---------- */
 
-  // Mirror what app.js flatten() does: strip PUA before inserting our own.
-  const cleaned = RP.stripNonContent(html.replace(/[-]/g, ''));
-  ok(cleaned.indexOf('') === -1, 'raw private-use characters are gone');
-  let n = 0;
-  cleaned.replace(RP.anchorRegex(), () => { n++; return ''; });
-  eq(n, 1, 'exactly one placeholder for one link');
+const tokens = s => s.match(
+  new RegExp(RP.TOKEN_OPEN + '\\d+' + RP.TOKEN_CLOSE, 'g')
+) || [];
+
+t('flattenBody marks each anchor with one placeholder', () => {
+  const out = RP.flattenBody(
+    '<p>hello</p><a href="https://a.test">one</a><a href="https://b.test">two</a>'
+  );
+  eq(tokens(out).length, 2);
+  ok(out.indexOf('hello') !== -1);
+  ok(out.indexOf('href') === -1, 'markup is gone');
+});
+
+t('a body cannot forge a link placeholder', () => {
+  // The renderer swaps these placeholders for real link elements by index.
+  // A body able to mint its own could make the annotated view attribute a
+  // visible link to somebody else's destination — the one thing that pane
+  // must never do. Raw private-use characters and numeric entities that
+  // would decode into them are both blocked.
+  const out = RP.flattenBody(
+    '<p>0 raw and &#xE000;0&#xE001; entity</p>' +
+    '<a href="https://real.test/a">the only link</a>'
+  );
+  eq(tokens(out).length, 1, 'only the genuine anchor gets a placeholder');
+
+  // Nothing outside our own marker may occupy the private-use range.
+  const pua = out.match(/[-]/g) || [];
+  eq(pua.length, 2, 'exactly one open and one close marker: ' + JSON.stringify(out));
+});
+
+t('entity decoding does not walk the prototype chain', () => {
+  // '&constructor;' used to print a function body into the message.
+  eq(RP.decodeEntities('&constructor;'), '&constructor;');
+  eq(RP.decodeEntities('&toString;'), '&toString;');
+  eq(RP.decodeEntities('&amp; &lt;'), '& <');
+});
+
+t('flattenBody drops anchors the engine also drops, keeping indexes aligned', () => {
+  // An anchor whose inner content exceeds the bounded quantifier is skipped
+  // by extractLinks; the renderer must skip it too or every later link shifts.
+  const huge = 'x'.repeat(9000);
+  const html =
+    '<p><a href="https://first.test/a">first</a></p>' +
+    '<p><a href="https://second.test/b">' + huge + '</a></p>' +
+    '<p><a href="https://third.test/c">third</a></p>';
+  const links = RP.extractLinks([{ type: 'text/html', decoded: html }]);
+  eq(tokens(RP.flattenBody(html)).length, links.length,
+    'placeholder count must equal link count');
+  eq(links.map(l => l.host).join(','), 'first.test,third.test');
 });
 
 t('stripNonContent removes script and comment regions', () => {
