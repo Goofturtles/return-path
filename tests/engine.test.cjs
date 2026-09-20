@@ -461,6 +461,24 @@ t('engine and renderer agree on which anchors count', () => {
   void huge;
 });
 
+t('a body cannot forge a link placeholder', () => {
+  // The renderer marks links with private-use characters. A message that
+  // carries its own - raw, or as a numeric entity - must not be able to mint
+  // a token and so make the annotated view point at a different link.
+  const html = '<p>1 and &#xE000;1&#xE001;</p>' +
+    '<a href="https://real.test/a">only link</a>';
+  const links = RP.extractLinks([{ type: 'text/html', decoded: html }]);
+  eq(links.length, 1, 'the fake tokens are not links');
+  eq(links[0].host, 'real.test');
+
+  // Mirror what app.js flatten() does: strip PUA before inserting our own.
+  const cleaned = RP.stripNonContent(html.replace(/[-]/g, ''));
+  ok(cleaned.indexOf('') === -1, 'raw private-use characters are gone');
+  let n = 0;
+  cleaned.replace(RP.anchorRegex(), () => { n++; return ''; });
+  eq(n, 1, 'exactly one placeholder for one link');
+});
+
 t('stripNonContent removes script and comment regions', () => {
   const out = RP.stripNonContent('<script>var a="<a href=x>y</a>";</script><p>keep</p><!-- gone -->');
   ok(out.indexOf('href') === -1, 'anchors inside <script> are gone');

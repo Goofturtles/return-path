@@ -146,6 +146,7 @@
     $('results').hidden = false;
     var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('results').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    $('results').focus({ preventScroll: true });
   }
 
   /* ------------------------------------------------------------ render */
@@ -393,6 +394,9 @@
           ? parseInt(body.slice(2), 16)
           : parseInt(body.slice(1), 10);
         if (!isFinite(code) || code < 9 || code > 0x10ffff) return m;
+      // Private-use area is where our link placeholders live; never let an
+      // entity decode into one.
+      if (code >= 0xE000 && code <= 0xF8FF) return m;
         try { return String.fromCodePoint(code); } catch (e) { return m; }
       }
       var v = ENTITIES[body.toLowerCase()];
@@ -409,7 +413,9 @@
     // file kept its own copies they would drift, and a link the engine skipped
     // but the renderer tokenised would shift every later placeholder — making
     // the annotated view attribute the wrong destination to a visible link.
-    var out = RP.stripNonContent(html);
+    // Strip any private-use characters the message carried before inserting
+     // our own, so the body cannot forge a placeholder and hijack a link.
+    var out = RP.stripNonContent(String(html).replace(/[\uE000-\uF8FF]/g, ''));
 
     var i = 0;
     out = out.replace(RP.anchorRegex(), function () {

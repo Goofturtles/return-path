@@ -50,7 +50,7 @@
 
   <!-- ─────────────────────────────────────────── hero + composer -->
   <section class="hero" id="analyse">
-    <h1 class="rise" style="--d:40ms">
+    <h1 class="rise">
       AI writes a flawless email. <em>It still can't forge the envelope.</em>
     </h1>
 
@@ -80,7 +80,7 @@
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
           </button>
 
-          <span class="box-status" id="winStatus">idle</span>
+          <span class="box-status" id="winStatus" role="status" aria-live="polite">idle</span>
 
           <button class="send" id="run" type="button" aria-label="Analyse envelope">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M3.5 8L8 3.5 12.5 8"/></svg>
@@ -128,7 +128,7 @@
   </section>
 
   <!-- ─────────────────────────────────────────── report -->
-  <section class="results" id="results" tabindex="-1" aria-live="polite" hidden>
+  <section class="results" id="results" tabindex="-1" hidden>
 
     <div class="report-head">
       <h2 class="report-title">Report</h2>

@@ -203,7 +203,6 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 .offline-badge .dot {
   width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none;
-  animation: breathe 3.4s ease-in-out infinite;
 }
 @keyframes glowPulse {
   0%, 100% { opacity: .75; transform: scale(1); }
@@ -369,7 +368,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 .banner:hover { border-color: var(--line); background: var(--panel); }
 .banner-dot {
   width: 6px; height: 6px; border-radius: 50%; flex: none;
-  background: var(--accent); animation: breathe 3.4s ease-in-out infinite;
+  background: var(--accent);
 }
 .banner-text { color: var(--ink-3); font-size: .83rem; line-height: 1.6; flex: 1; }
 .banner-link { color: var(--accent); font-size: .83rem; line-height: 1.6; white-space: nowrap; }
@@ -411,7 +410,6 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 /* ══════════════════════════════════════════════ disclosure (animated) */
 
-.disclosure { }
 .disclosure-head {
   font: inherit; font-size: .86rem; line-height: 1.7;
   display: flex; align-items: center; gap: 9px;
