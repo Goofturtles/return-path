@@ -55,7 +55,7 @@ Run the test suite:
 node return-path/tests/engine.test.cjs
 ```
 
-79 assertions covering address parsing, punycode round-trips, confusable folding,
+84 assertions covering address parsing, punycode round-trips, confusable folding,
 auth-result extraction, hop ordering, all six specimens end to end, and malformed input.
 
 ## Two design decisions worth explaining

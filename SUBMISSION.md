@@ -93,7 +93,7 @@ suite.
 
 `js/app.js` is the view layer, under one hard rule described below.
 
-Deployed as static files on GitHub Pages. Tested with a 79-assertion Node suite that
+Deployed as static files on GitHub Pages. Tested with a 84-assertion Node suite that
 runs with zero dependencies: `node tests/engine.test.cjs`.
 
 ## Two decisions I'd defend in a code review
