@@ -332,6 +332,150 @@ t('every finding has a title, a why, and a severity', () => {
   });
 });
 
+/* ---------- false positives on legitimate mail ---------- */
+
+t('regional brand domains are not lookalikes', () => {
+  ['amazon.ca', 'paypal.co.uk', 'netflix.de', 'apple.fr', 'microsoft.com.au']
+    .forEach(d => eq(RP.lookalike(d), null, d + ' should be treated as the brand'));
+});
+
+t('a brand name on an implausible TLD still fires', () => {
+  const l = RP.lookalike('paypal.top');
+  ok(l && l.brand === 'paypal.com', 'paypal.top should be flagged');
+});
+
+t('brand names embedded in ordinary words do not fire', () => {
+  ['purchase.com', 'pineapple.com', 'canadagoose.com', 'chasing-cars.com', 'applesauce.org']
+    .forEach(d => eq(RP.lookalike(d), null, d + ' should not be a lookalike'));
+});
+
+t('short brands do not generate nonsense near-misses', () => {
+  ['ample.com', 'case.com', 'black.com', 'pple.com']
+    .forEach(d => eq(RP.lookalike(d), null, d + ' is too far from a short brand'));
+  // Kept deliberately: 6+ char brands still catch one-character typos.
+  ok(RP.lookalike('amazn.com'), 'amazn.com should still be caught');
+});
+
+t('long-brand typos are still caught', () => {
+  ok(RP.lookalike('micrsoft.com'), 'micrsoft.com');
+  ok(RP.lookalike('paypa1.com'), 'paypa1.com');
+  ok(RP.lookalike('paypal.account-verify.evil.top'), 'brand as a subdomain label');
+});
+
+t('a plain internationalised domain is not critical', () => {
+  // xn--mller-kva.de is müller.de — a real German domain, single script.
+  const r = RP.analyze([
+    'From: "Firma" <post@xn--mller-kva.de>',
+    'Subject: Rechnung',
+    'Date: Thu, 17 Sep 2026 06:12:40 -0400',
+    ''
+  ].join('\n'));
+  const f = r.findings.find(x => x.id.startsWith('punycode-'));
+  ok(f, 'the IDN should still be reported');
+  eq(f.severity, 'low', 'but not as an attack');
+  ok(r.verdict.level !== 'forged', 'got ' + r.verdict.level);
+});
+
+t('accented Latin IDNs are not treated as homographs', () => {
+  // cafe with an accent, and muller with an umlaut - both ordinary domains.
+  ['xn--caf-dma.fr', 'xn--mller-kva.de'].forEach(host => {
+    const d = RP.decodePunycodeHost(host);
+    ok(d, host + ' should decode');
+    ok(!/[\u0400-\u04FF\u0370-\u03FF]/.test(d), d + ' is Latin, not another alphabet');
+  });
+});
+
+t('a homograph mixing scripts is critical', () => {
+  const f = RP.analyze([
+    'From: "Microsoft" <a@xn--microsft-secure-esm.com>',
+    'Subject: hi',
+    'Date: Thu, 17 Sep 2026 06:12:40 -0400',
+    ''
+  ].join('\n')).findings.find(x => x.id.startsWith('punycode-'));
+  eq(f.severity, 'critical');
+});
+
+/* ---------- parser robustness ---------- */
+
+t('a MIME preamble is not treated as a body part', () => {
+  const r = RP.analyze([
+    'From: a@b.com',
+    'Subject: hi',
+    'Date: Thu, 17 Sep 2026 06:12:40 -0400',
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/mixed; boundary="X"',
+    '',
+    'This is a multi-part message in MIME format.',
+    '--X',
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    'the actual body',
+    '--X--'
+  ].join('\n'));
+  eq(r.parts.length, 1, 'preamble should not become a part');
+  ok(r.parts[0].decoded.indexOf('the actual body') !== -1);
+});
+
+t('Received id fragments are not mistaken for IP addresses', () => {
+  const h = RP.parseHeaders(
+    'Received: from a.com (a.com. [203.0.113.9]) by mx.google.com with SMTPS ' +
+    'id k7si2839201pfc.88.2026.09.17.03.12.43; Thu, 17 Sep 2026 03:12:44 -0700'
+  );
+  eq(RP.parseHops(h)[0].ip, '203.0.113.9');
+});
+
+t('an octet over 255 is not accepted as an IP', () => {
+  const h = RP.parseHeaders('Received: from a.com ([999.1.1.1]) by b.com; Thu, 17 Sep 2026 03:12:44 -0700');
+  eq(RP.parseHops(h)[0].ip, '');
+});
+
+t('prototype keys in the body do not leak', () => {
+  const r = RP.analyze([
+    'From: a@b.com', 'Subject: hi', 'Date: Thu, 17 Sep 2026 06:12:40 -0400',
+    'Content-Type: text/html', '',
+    '<p>&constructor; &toString; hello</p>'
+  ].join('\n'));
+  ok(r.ok);
+  ok(r.parts[0].decoded.indexOf('constructor') !== -1, 'left as literal text');
+});
+
+/* ---------- renderer/engine link agreement ---------- */
+
+t('engine and renderer agree on which anchors count', () => {
+  // An anchor inside a comment, and one whose inner content is enormous.
+  const huge = 'x'.repeat(9000);
+  const html = '<!-- <a href="https://ignored.test">skip</a> -->' +
+    '<p><a href="https://evil.test/login">https://www.paypal.com/signin</a></p>' +
+    '<p><a href="https://second.test/a">second</a></p>';
+  const parts = [{ type: 'text/html', decoded: html }];
+  const links = RP.extractLinks(parts);
+  eq(links.length, 2, 'the commented-out anchor must not count');
+  eq(links[0].host, 'evil.test');
+  eq(links[1].host, 'second.test');
+
+  // The renderer tokenises with the SAME regex over the SAME stripped source,
+  // so its token count must match the engine's link count exactly.
+  let n = 0;
+  RP.stripNonContent(html).replace(RP.anchorRegex(), () => { n++; return ''; });
+  eq(n, links.length, 'token count must equal link count');
+  void huge;
+});
+
+t('stripNonContent removes script and comment regions', () => {
+  const out = RP.stripNonContent('<script>var a="<a href=x>y</a>";</script><p>keep</p><!-- gone -->');
+  ok(out.indexOf('href') === -1, 'anchors inside <script> are gone');
+  ok(out.indexOf('gone') === -1, 'comments are gone');
+  ok(out.indexOf('keep') !== -1);
+});
+
+t('a pathological run of unclosed anchors completes quickly', () => {
+  const evil = '<a href=x>'.repeat(20000);
+  const started = Date.now();
+  RP.extractLinks([{ type: 'text/html', decoded: evil }]);
+  const ms = Date.now() - started;
+  ok(ms < 3000, 'took ' + ms + 'ms — the anchor regex is backtracking');
+});
+
 t('analysis is deterministic', () => {
   const a = RP.analyze(sample('credential-phish'));
   const b = RP.analyze(sample('credential-phish'));

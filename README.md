@@ -55,13 +55,13 @@ Run the test suite:
 node return-path/tests/engine.test.cjs
 ```
 
-64 assertions covering address parsing, punycode round-trips, confusable folding,
+79 assertions covering address parsing, punycode round-trips, confusable folding,
 auth-result extraction, hop ordering, all six specimens end to end, and malformed input.
 
 ## Two design decisions worth explaining
 
-**Nothing is uploaded, ever.** The page loads three JavaScript files and then makes no
-further network requests. You can disconnect from the internet and it keeps working.
+**Nothing is uploaded, ever.** The page loads a dozen local files (markup, styles, three scripts
+and its fonts) and then makes no further network requests. You can disconnect from the internet and it keeps working.
 This isn't a feature bullet — it's the only defensible way to handle somebody's private
 mail. Every comparable tool asks you to paste your email into someone else's server,
 which means reporting a phishing attempt requires handing a stranger the contents of
@@ -101,6 +101,8 @@ arrives as a text node. See the header comment in `js/app.js`.
 return-path/
   index.html              one page
   css/app.css             one stylesheet
+  css/fonts.css           self-hosted @font-face declarations
+  fonts/                  seven woff2 files, so no third-party font requests
   js/engine.js            analysis — pure functions, runs in node and the browser
   js/samples.js           six synthetic specimens
   js/app.js               view layer — text nodes only, no innerHTML

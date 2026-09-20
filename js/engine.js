@@ -135,7 +135,7 @@
       local: local,
       domain: domain,
       // Any address-looking text that appears *inside* the display name.
-      displayAddresses: (display.match(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi) || [])
+      displayAddresses: (display.slice(0, 2000).match(/[\w.+-]{1,64}@[\w.-]{1,255}\.[a-z]{2,}/gi) || [])
     };
   }
 
@@ -269,7 +269,7 @@
     'cra-arc.gc.ca', 'rbc.com', 'td.com', 'scotiabank.com'
   ];
 
-  var BRAND_WORDS = {};
+  var BRAND_WORDS = Object.create(null);
   BRANDS.forEach(function (b) { BRAND_WORDS[b.split('.')[0]] = b; });
 
   // Second domains the brands genuinely own and send from. Without these,
@@ -287,6 +287,24 @@
     'dropboxusercontent.com', 'docusign.net', 'coinbase-mail.com', 'canada.ca'
   ];
 
+  // TLDs a real company plausibly uses for a country storefront. amazon.ca is
+  // Amazon; amazon.top is not. Without this the From check calls legitimate
+  // regional mail "Forged", which is the worst error this tool can make.
+  var SAFE_TLDS = [
+    'com', 'net', 'org', 'ca', 'uk', 'co.uk', 'de', 'fr', 'es', 'it', 'nl', 'be',
+    'ch', 'at', 'se', 'no', 'dk', 'fi', 'ie', 'pl', 'pt', 'cz', 'gr', 'au',
+    'com.au', 'nz', 'co.nz', 'jp', 'co.jp', 'in', 'co.in', 'br', 'com.br', 'mx',
+    'com.mx', 'za', 'co.za', 'sg', 'hk', 'kr', 'tw', 'eu', 'us', 'gov', 'gc.ca'
+  ];
+
+  function tldOf(reg) {
+    var parts = String(reg).split('.');
+    if (parts.length <= 1) return '';
+    var lastTwo = parts.slice(-2).join('.');
+    if (MULTI_PART_TLDS.indexOf(lastTwo) !== -1) return lastTwo;
+    return parts[parts.length - 1];
+  }
+
   function lookalike(domain) {
     if (!domain) return null;
     var reg = registrableDomain(domain);
@@ -300,11 +318,16 @@
       var brand = BRANDS[i];
       var brandName = brand.split('.')[0];
       if (skel === skeleton(brand)) return { brand: brand, kind: 'identical-skeleton', distance: 0 };
-      // Same second-level name, different TLD:  paypal.security-check.xyz
-      if (skelName === brandName && reg !== brand) return { brand: brand, kind: 'brand-name-wrong-domain', distance: 0 };
-      if (brandName.length >= 5) {
+      // Same second-level name on another TLD. paypal.ca is fine; paypal.top is not.
+      if (skelName === brandName && reg !== brand) {
+        if (SAFE_TLDS.indexOf(tldOf(reg)) !== -1) return null;
+        return { brand: brand, kind: 'brand-name-wrong-domain', distance: 0 };
+      }
+      // Short brands generate nonsense near-misses (case/chase, ample/apple,
+      // black/slack), so only names long enough for a typo to be meaningful.
+      if (brandName.length >= 6) {
         var d = levenshtein(skelName, brandName);
-        if (d > 0 && d <= (brandName.length >= 8 ? 2 : 1)) {
+        if (d > 0 && d <= (brandName.length >= 9 ? 2 : 1)) {
           return { brand: brand, kind: 'near-miss', distance: d };
         }
       }
@@ -316,7 +339,10 @@
     for (var k = 0; k < keys.length; k++) {
       var word = keys[k];
       if (word.length < 5) continue;
-      if (full.indexOf(word) !== -1 && registrableDomain(BRAND_WORDS[word]) !== reg) {
+      // Bounded by a separator or the ends of the host. A bare substring test
+      // reads "chase" out of purchase.com and "apple" out of pineapple.com.
+      var bounded = new RegExp('(^|[^a-z0-9])' + word + '([^a-z0-9]|$)');
+      if (bounded.test(full) && registrableDomain(BRAND_WORDS[word]) !== reg) {
         return { brand: BRAND_WORDS[word], kind: 'brand-in-subdomain', distance: 0 };
       }
     }
@@ -394,8 +420,11 @@
       var v = h.value;
       var from = (v.match(/\bfrom\s+([^\s;()]+)/i) || [])[1] || '';
       var by = (v.match(/\bby\s+([^\s;()]+)/i) || [])[1] || '';
-      var ipm = v.match(/\[?((?:\d{1,3}\.){3}\d{1,3})\]?/);
-      var ip = ipm ? ipm[1] : '';
+      // Only a bracketed or parenthesised address. A bare dotted run matches
+      // fragments of Received ids like "k7si28.88.2026.09.17.03.12.43".
+      var ipm = v.match(/[[(]((?:\d{1,3}\.){3}\d{1,3})[\])]/);
+      var ip = ipm && ipm[1].split('.').every(function (o) { return Number(o) <= 255; })
+        ? ipm[1] : '';
       var dpart = v.split(';').pop();
       var date = null;
       if (dpart) {
@@ -435,7 +464,10 @@
 
     if (boundary) {
       var chunks = body.split('--' + boundary);
-      chunks.forEach(function (chunk) {
+      // chunks[0] is the preamble ("This is a multi-part message..."), which is
+      // not a part. Treating it as one made it win the render as an empty
+      // text/plain and hid the message panel on ordinary multipart mail.
+      chunks.slice(1).forEach(function (chunk) {
         var t = chunk.replace(/^\n+/, '');
         if (!t || t.indexOf('--') === 0) return;
         var split = splitMessage(t);
@@ -513,6 +545,21 @@
     };
   }
 
+  // Regions whose anchors are not part of the visible message. The renderer
+  // must strip exactly the same regions, or its placeholders line up with the
+  // wrong links and the annotated view reports a false destination.
+  function stripNonContent(html) {
+    return String(html)
+      .replace(/<!--[\s\S]{0,20000}?-->/g, ' ')
+      .replace(/<(script|style|head|title|noscript)\b[^>]{0,2000}>[\s\S]{0,200000}?<\/\1\s*>/gi, ' ');
+  }
+
+  // Bounded body so a pathological run of unclosed <a> cannot make the lazy
+  // quantifier rescan to EOF from every match position and hang the tab.
+  function anchorRegex() {
+    return /<a\b[^>]{0,2000}?href\s*=\s*("([^"]{0,2000})"|'([^']{0,2000})'|([^\s">]{0,2000}))[^>]{0,2000}>([\s\S]{0,8000}?)<\/a\s*>/gi;
+  }
+
   function extractLinks(parts) {
     var links = [];
     var seen = 0;
@@ -522,9 +569,10 @@
       // placeholders up with the right link even in a multi-part message.
       var inPart = 0;
       if (p.type === 'text/html') {
-        var re = /<a\b[^>]*?href\s*=\s*("([^"]*)"|'([^']*)'|([^\s">]+))[^>]*>([\s\S]*?)<\/a\s*>/gi;
+        var re = anchorRegex();
         var m;
-        while ((m = re.exec(p.decoded)) !== null) {
+        var src = stripNonContent(p.decoded);
+        while ((m = re.exec(src)) !== null) {
           var href = (m[2] || m[3] || m[4] || '').trim();
           var text = m[5].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
           links.push({ href: href, text: text, index: seen++, partIndex: partIndex, inPart: inPart++, source: 'anchor' });
@@ -771,7 +819,7 @@
 
     /* --- 9d. Lookalike domains ------------------------------------- */
 
-    var checkedDomains = {};
+    var checkedDomains = Object.create(null);
     function checkDomain(domain, where, severity) {
       // Key on the domain alone: when From and Return-Path share a domain there
       // is one fact to report, not two.
@@ -780,10 +828,27 @@
 
       var puny = decodePunycodeHost(domain);
       if (puny) {
+        // Plenty of legitimate domains are internationalised. What makes one
+        // an attack is imitating a known brand, or mixing scripts inside a
+        // single label so it reads as Latin but is not.
+        // Latin letters with diacritics (muller.de, cafe.fr) are ordinary.
+        // The homograph trick is a NON-Latin alphabet wearing Latin clothes:
+        // a Cyrillic a or a Greek omicron sitting inside an ASCII word.
+        var OTHER_SCRIPT = /[\u0370-\u03FF\u0400-\u04FF\u0500-\u052F\u0530-\u058F\u10A0-\u10FF\u2C00-\u2C5F]/;
+        var mixedScript = puny.split('.').some(function (label) {
+          return /[a-z]/.test(label) && OTHER_SCRIPT.test(label);
+        });
+        var deceptive = mixedScript || !!lookalike(puny);
         F.add({
-          id: 'punycode-' + where, severity: 'critical', tag: 'Lookalike',
-          title: 'Punycode domain in the ' + where,
-          why: 'The domain is registered as ' + domain + ' but your browser and mail client will render it as "' + puny + '". Those are different domains that look identical on screen. This is a homograph attack, and reading carefully cannot defeat it — the characters really are different.',
+          id: 'punycode-' + where,
+          severity: deceptive ? 'critical' : 'low',
+          tag: 'Lookalike',
+          title: deceptive
+            ? 'Homograph domain in the ' + where
+            : 'Internationalised domain in the ' + where,
+          why: deceptive
+            ? 'The domain is registered as ' + domain + ' but your browser and mail client will render it as "' + puny + '". Those are different domains that look identical on screen' + (mixedScript ? ', because the label mixes alphabets — some of those letters are not the Latin characters they appear to be' : '') + '. Reading carefully cannot defeat this; the characters really are different.'
+            : 'The domain is registered as ' + domain + ' and displays as "' + puny + '". That is ordinary internationalised naming rather than an attack by itself — but it is worth seeing the real registration, because this is also the mechanism a homograph attack uses.',
           evidence: [
             { label: 'Registered as', text: domain },
             { label: 'Displays as', text: puny }
@@ -829,7 +894,7 @@
 
     /* --- 9e. Links -------------------------------------------------- */
 
-    var linkHosts = {};
+    var linkHosts = Object.create(null);
     links.forEach(function (l) {
       l.flags = [];
       if (!l.url) return;
@@ -1141,6 +1206,8 @@
     extractLinks: extractLinks,
     extractParts: extractParts,
     parseAuthResults: parseAuthResults,
+    stripNonContent: stripNonContent,
+    anchorRegex: anchorRegex,
     parseHops: parseHops,
     levenshtein: levenshtein,
     BRANDS: BRANDS

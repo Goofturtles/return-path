@@ -7,9 +7,26 @@
 <meta name="description" content="Paste a suspicious email's raw source and see exactly who really sent it. Header forensics that runs entirely in your browser — nothing is uploaded, ever.">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0e13'/><path d='M6 10.5h20v11.5H6z' fill='none' stroke='%2358d6c9' stroke-width='2'/><path d='M6 11l10 7 10-7' fill='none' stroke='%2358d6c9' stroke-width='2'/></svg>">
+<!-- Fonts are self-hosted and declared with font-display:swap. No preload hint:
+     it mismatched the actual fetch and left warnings in the console, which is a
+     bad look on a page that invites you to audit its network activity. -->
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+
+<!-- Volumetric haze drifting across the top of the page. The cloud texture is
+     stitched fractal noise, so it tiles horizontally without a seam — each
+     layer is three tiles wide and translates by exactly one tile, which makes
+     the loop continuous and one-directional forever. Three layers at different
+     speeds give it depth. -->
+<div class="sky" aria-hidden="true">
+  <div class="cloud cloud-far"></div>
+  <div class="cloud cloud-mid"></div>
+  <div class="cloud cloud-near"></div>
+</div>
+
+<div class="grain" aria-hidden="true"></div>
 
 <header class="topbar">
   <a class="brand" href="#top">
@@ -23,83 +40,101 @@
     <span class="offline-badge" title="No network requests are made after this page loads.">
       <span class="dot"></span> Runs offline
     </span>
-    <a class="topbar-link" href="#how">How it works</a>
+    <a class="topbar-link" href="#catches">What it catches</a>
+    <a class="topbar-link" href="#privacy">Privacy</a>
     <a class="topbar-link" href="#limits">Limits</a>
   </div>
 </header>
 
 <main id="top">
 
-  <section class="hero">
-    <p class="eyebrow">Email envelope forensics</p>
-    <h1>AI writes a flawless email.<br>It still can't forge the&nbsp;envelope.</h1>
-    <p class="lede">
-      For twenty years the advice was <em>look for bad spelling</em>. Language models
-      ended that overnight. What they cannot touch is the machinery underneath — every
-      message carries a record of the servers that really carried it.
-    </p>
-  </section>
+  <!-- ─────────────────────────────────────────── hero + composer -->
+  <section class="hero" id="analyse">
+    <h1 class="rise" style="--d:40ms">
+      AI writes a flawless email. <em>It still can't forge the envelope.</em>
+    </h1>
 
-  <section class="stage" id="analyse">
-    <div class="bloom" aria-hidden="true"></div>
-
-    <div class="window">
-      <div class="win-bar">
-        <span class="win-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="win-title">raw message source</span>
-        <span class="win-status" id="winStatus">idle</span>
+    <div class="composer rise" style="--d:160ms">
+      <div class="tabs">
+        <button class="tab is-on" type="button" aria-pressed="true" data-mode="paste">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2.5h5v2h-5zM3.5 3.5h2v2h5v-2h2v10h-9z"/></svg>
+          Paste source
+        </button>
+        <button class="tab" type="button" aria-pressed="false" data-mode="file">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v9h-11zM2.5 4l5.5 4 5.5-4"/></svg>
+          Upload .eml
+        </button>
       </div>
 
-      <div class="win-body">
-        <div class="sample-row" id="sampleRow">
-          <span class="sample-label">Specimens</span>
-        </div>
+      <div class="box" id="drop">
+        <label class="sr-only" for="input">Raw email source</label>
+        <textarea id="input" spellcheck="false" autocomplete="off"
+          placeholder="Paste the raw source of a suspicious email…"></textarea>
 
-        <div class="drop" id="drop">
-          <textarea id="input" spellcheck="false" autocomplete="off"
-            placeholder="Paste everything from&#10;&#10;    Delivered-To: ...&#10;    Received: from ...&#10;    Authentication-Results: ...&#10;&#10;down to the end of the message. Or drop a .eml file on this box."></textarea>
-          <div class="drop-overlay"><span>Drop the .eml file</span></div>
-        </div>
-
-        <div class="console-actions">
-          <button class="btn btn-primary" id="run">Analyse envelope</button>
+        <div class="box-bar">
           <input type="file" id="file" accept=".eml,.txt,.msg,message/rfc822" hidden>
-          <button class="btn btn-ghost" id="pick">Open a file…</button>
-          <button class="btn btn-ghost" id="clear">Clear</button>
-          <span class="kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd> to run</span>
+          <button class="icon-btn" id="pick" type="button" aria-label="Open a .eml file">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+          </button>
+          <button class="icon-btn" id="clear" type="button" aria-label="Clear">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+          </button>
+
+          <span class="box-status" id="winStatus">idle</span>
+
+          <button class="send" id="run" type="button" aria-label="Analyse envelope">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M3.5 8L8 3.5 12.5 8"/></svg>
+          </button>
         </div>
 
-        <div class="error" id="error" hidden></div>
+        <div class="drop-overlay"><span>Drop the .eml file</span></div>
+      </div>
+
+      <div class="error" id="error" role="alert" hidden></div>
+
+      <a class="banner" href="#privacy">
+        <span class="banner-dot" aria-hidden="true"></span>
+        <span class="banner-text">
+          Nothing you paste leaves this tab. The page makes zero network requests.
+        </span>
+        <span class="banner-link">Why that matters <span aria-hidden="true">→</span></span>
+      </a>
+
+      <div class="sample-row" id="sampleRow">
+        <span class="sample-label">Try a specimen</span>
+      </div>
+
+      <div class="disclosure help" data-disclosure>
+        <button class="disclosure-head" type="button" aria-expanded="false">
+          <span class="disclosure-mark" aria-hidden="true"></span>
+          Where do I find the raw source?
+        </button>
+        <div class="disclosure-wrap"><div class="disclosure-body">
+          <dl class="help-dl">
+            <dt>Gmail (web)</dt><dd>Open the message → <b>⋮</b> menu → <b>Show original</b> → <b>Copy to clipboard</b>.</dd>
+            <dt>Outlook (web)</dt><dd>Open the message → <b>⋯</b> menu → <b>View</b> → <b>View message source</b>.</dd>
+            <dt>Outlook (desktop)</dt><dd>Open the message → <b>File</b> → <b>Properties</b> → copy the <b>Internet headers</b> box.</dd>
+            <dt>Apple Mail</dt><dd><b>View</b> → <b>Message</b> → <b>Raw Source</b> (⌥⌘U).</dd>
+            <dt>Thunderbird</dt><dd><b>View</b> → <b>Message Source</b> (Ctrl+U).</dd>
+            <dt>Any client</dt><dd>Drag the message to your desktop to save a <code>.eml</code>, then drop it above.</dd>
+          </dl>
+          <p class="help-note">
+            Headers alone are enough for the sender analysis. Include the body too and
+            you also get the link and attachment analysis.
+          </p>
+        </div></div>
       </div>
     </div>
-
-    <details class="help">
-      <summary>Where do I find the raw source?</summary>
-      <div class="help-body">
-        <dl>
-          <dt>Gmail (web)</dt><dd>Open the message → <b>⋮</b> menu → <b>Show original</b> → <b>Copy to clipboard</b>.</dd>
-          <dt>Outlook (web)</dt><dd>Open the message → <b>⋯</b> menu → <b>View</b> → <b>View message source</b>.</dd>
-          <dt>Outlook (desktop)</dt><dd>Open the message → <b>File</b> → <b>Properties</b> → copy the <b>Internet headers</b> box.</dd>
-          <dt>Apple Mail</dt><dd><b>View</b> → <b>Message</b> → <b>Raw Source</b> (⌥⌘U).</dd>
-          <dt>Thunderbird</dt><dd><b>View</b> → <b>Message Source</b> (Ctrl+U).</dd>
-          <dt>Any client</dt><dd>Drag the message to your desktop to save a <code>.eml</code>, then drop it above.</dd>
-        </dl>
-        <p class="help-note">
-          Headers alone are enough for the sender analysis. Include the body too and you
-          also get the link and attachment analysis.
-        </p>
-      </div>
-    </details>
   </section>
 
-  <section class="results" id="results" hidden>
+  <!-- ─────────────────────────────────────────── report -->
+  <section class="results" id="results" tabindex="-1" aria-live="polite" hidden>
 
     <div class="report-head">
       <h2 class="report-title">Report</h2>
       <div class="report-meta" id="reportMeta"></div>
     </div>
 
-    <!-- Verdict + envelope, one screenful. -->
     <div class="verdict" id="verdict">
       <div class="verdict-left">
         <div class="verdict-top">
@@ -130,10 +165,15 @@
       </div>
       <p class="panel-sub">Each row is derived from a header in your message. Open one to see the header it came from.</p>
       <div class="findings" id="findings"></div>
-      <details class="passed" id="passedWrap" hidden>
-        <summary><span id="passedCount"></span></summary>
-        <div class="findings" id="passed"></div>
-      </details>
+      <div class="disclosure passed" id="passedWrap" data-disclosure hidden>
+        <button class="disclosure-head" type="button" aria-expanded="false">
+          <span class="disclosure-mark" aria-hidden="true"></span>
+          <span id="passedCount"></span>
+        </button>
+        <div class="disclosure-wrap"><div class="disclosure-body">
+          <div class="findings" id="passed"></div>
+        </div></div>
+      </div>
     </div>
 
     <div class="panel" id="messagePanel">
@@ -172,89 +212,223 @@
 
   </section>
 
-  <section class="prose" id="how">
-    <h2>What this actually checks</h2>
-    <div class="grid2">
-      <div>
-        <h4>Authentication</h4>
+  <!-- ─────────────────────────────────────────── what it catches -->
+  <section class="section" id="catches">
+    <div class="section-head reveal">
+      <p class="kicker">What it catches</p>
+      <h2>Eight ways an email lies about<br>where it came from.</h2>
+      <p class="section-lede">
+        None of them involve spelling. All of them are visible in the headers, and every
+        one is something a real message almost never does.
+      </p>
+    </div>
+
+    <div class="cards">
+      <article class="card reveal" style="--d:0ms">
+        <span class="card-n">01</span>
+        <h3>The two senders disagree</h3>
         <p>
-          SPF asks whether the sending server was on the domain owner's approved list.
-          DKIM checks a cryptographic signature over the message. DMARC is the part
-          people skip: it ties those two results back to the address you actually see,
-          and publishes what the domain owner wants done when they don't match.
+          The <code>From:</code> you're shown and the <code>Return-Path:</code> the
+          servers used are different domains, and nothing ties them together. This is
+          how a message passes SPF while appearing to come from someone else.
         </p>
-        <h4>Alignment</h4>
+      </article>
+
+      <article class="card reveal" style="--d:60ms">
+        <span class="card-n">02</span>
+        <h3>The domain owner disowns it</h3>
         <p>
-          A message can pass SPF and still be a forgery, because SPF validates the
-          envelope sender — not the From line. Return Path shows both addresses side by
-          side so you can see whether the pass applies to the name on the letter or only
-          to the postmark.
+          DMARC is the sender's own published policy. A <code>fail</code> means the
+          organisation named in the From line has effectively stated this did not come
+          from them.
         </p>
-        <h4>Impersonation</h4>
+      </article>
+
+      <article class="card reveal" style="--d:120ms">
+        <span class="card-n">03</span>
+        <h3>A fake address in the name field</h3>
         <p>
-          Display names are free text and are never verified. Putting a real address
-          inside the name field is enough to fool every mobile mail client, because they
-          show the name and hide the address.
+          Display names are free text and never verified. Put
+          <code>service@paypal.com</code> there and every phone shows it, because mobile
+          mail clients display the name and hide the real address entirely.
         </p>
-      </div>
-      <div>
-        <h4>Lookalike domains</h4>
+      </article>
+
+      <article class="card reveal" style="--d:180ms">
+        <span class="card-n">04</span>
+        <h3>A domain that isn't the domain</h3>
         <p>
-          Punycode is decoded, so a domain registered as <code>xn--pypal-4ve.com</code>
-          is shown as the <code>pаypal.com</code> you would have seen on screen —
-          with a Cyrillic а. Confusable characters are folded before comparison, which
-          catches the digit-for-letter and <code>rn</code>-for-<code>m</code> swaps too.
+          <code>xn--pypal-4ve.com</code> renders on screen as <b>pаypal.com</b> — with a
+          Cyrillic а. Punycode is decoded and confusables are folded, so
+          <code>paypa1.com</code> and <code>rnicrosoft.com</code> surface too.
         </p>
-        <h4>Links</h4>
+      </article>
+
+      <article class="card reveal" style="--d:240ms">
+        <span class="card-n">05</span>
+        <h3>Links that go somewhere else</h3>
         <p>
-          Anchor text is compared against the real destination. URLs that hide behind an
-          <code>@</code>, point at bare IP addresses, or route through shorteners are
-          pulled out and shown for what they are.
+          Anchor text is decoration; only the <code>href</code> is real. Text/destination
+          mismatches, <code>@</code>-in-URL misdirection, bare IPs and shorteners all get
+          pulled out and named.
         </p>
-        <h4>Attachments</h4>
+      </article>
+
+      <article class="card reveal" style="--d:300ms">
+        <span class="card-n">06</span>
+        <h3>Your reply goes to a stranger</h3>
         <p>
-          Filenames are checked for double extensions — the trick that works because
-          Windows hides the real one by default — and for formats that can carry macros.
+          A <code>Reply-To:</code> on an unrelated domain is the engine of every
+          invoice-redirect and gift-card scam. The first message only has to survive long
+          enough for you to start a thread.
         </p>
-      </div>
+      </article>
+
+      <article class="card reveal" style="--d:360ms">
+        <span class="card-n">07</span>
+        <h3>The filename isn't the file</h3>
+        <p>
+          <code>Remittance.pdf.js</code> appears in your downloads as
+          <code>Remittance.pdf</code>, because Windows hides known extensions. The one
+          that runs is the last one.
+        </p>
+      </article>
+
+      <article class="card reveal" style="--d:420ms">
+        <span class="card-n">08</span>
+        <h3>A route that doesn't add up</h3>
+        <p>
+          Every server stamps a <code>Received:</code> line on the way through. Read in
+          order, they're a timeline — and invented hops tend to report times that run
+          backwards.
+        </p>
+      </article>
     </div>
   </section>
 
-  <section class="prose" id="limits">
-    <h2>What this can't do</h2>
-    <p>
-      A tool that only tells you what it caught is half a tool. Here is where this one
-      stops:
-    </p>
+  <!-- ─────────────────────────────────────────── how -->
+  <section class="section" id="how">
+    <div class="section-head reveal">
+      <p class="kicker">How it works</p>
+      <h2>Three steps, no account,<br>no upload.</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step reveal" style="--d:0ms">
+        <span class="step-n">1</span>
+        <div>
+          <h3>Get the real source</h3>
+          <p>
+            In Gmail that's <b>Show original</b>; in Outlook, <b>View message source</b>.
+            What you get is the message as the servers saw it — headers included. Or just
+            drag the email to your desktop and drop the <code>.eml</code> here.
+          </p>
+        </div>
+      </li>
+      <li class="step reveal" style="--d:80ms">
+        <span class="step-n">2</span>
+        <div>
+          <h3>Paste it in</h3>
+          <p>
+            The analysis runs in this tab, in about a millisecond. Roughly thirty
+            deterministic rules read the headers the way a mail administrator would —
+            no model, no scoring, no guessing.
+          </p>
+        </div>
+      </li>
+      <li class="step reveal" style="--d:160ms">
+        <span class="step-n">3</span>
+        <div>
+          <h3>Read the evidence, not a score</h3>
+          <p>
+            You get a verdict, what to do about it, and a list of findings — each one
+            opening to show the exact header it came from. That's the difference between
+            something you trust and something you can check.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ─────────────────────────────────────────── privacy -->
+  <section class="section" id="privacy">
+    <div class="privacy-card reveal">
+      <div class="privacy-glow" aria-hidden="true"></div>
+      <p class="kicker">Privacy</p>
+      <h2>Nothing you paste ever leaves<br>this browser tab.</h2>
+      <p class="privacy-lede">
+        This page loads a dozen local files and then makes no further network requests. Not
+        analytics, not fonts, not a scanning API. You can disconnect from the internet
+        and it will keep working — which is a claim you can check in your own developer
+        tools rather than take on trust.
+      </p>
+      <p class="privacy-lede">
+        That matters because every comparable tool asks you to paste your email into
+        someone else's server. Reporting a phishing attempt shouldn't require handing a
+        stranger the contents of your inbox.
+      </p>
+      <div class="privacy-stats">
+        <div><b>0</b><span>network requests after load</span></div>
+        <div><b>0</b><span>accounts, cookies or storage</span></div>
+        <div><b>0</b><span>dependencies or build steps</span></div>
+      </div>
+      <p class="privacy-cost">
+        The cost, stated plainly: DKIM signatures can't be re-verified here, because that
+        needs a DNS lookup for the sender's public key. Return Path reads the result your
+        mail provider already recorded.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────── limits -->
+  <section class="section" id="limits">
+    <div class="section-head reveal">
+      <p class="kicker">Limits</p>
+      <h2>What this can't do.</h2>
+      <p class="section-lede">
+        A tool that only tells you what it caught is half a tool. Here's where this one
+        stops.
+      </p>
+    </div>
+
     <ul class="limits">
-      <li>
+      <li class="reveal" style="--d:0ms">
         <b>It cannot re-verify a signature.</b> DKIM verification needs a DNS lookup for
-        the sender's public key, and this page makes no network requests by design.
-        It reads the result your mail provider already recorded. If a message was
-        forwarded, that record may be missing or stale.
+        the sender's public key, and this page makes no network requests by design. It
+        reads the result your mail provider already recorded. Forwarded mail may carry a
+        stale record, or none.
       </li>
-      <li>
-        <b>It cannot see a compromised account.</b> When an attacker is sending from a
-        real mailbox they have stolen, every check passes because everything is genuine
-        except the person typing. That is what the business-email-compromise specimen
-        demonstrates, and why the verdict never says "safe".
+      <li class="reveal" style="--d:60ms">
+        <b>It cannot see a compromised account.</b> When an attacker sends from a real
+        mailbox they've stolen, every check passes, because everything is genuine except
+        the person typing. That's what the business-email-compromise specimen shows, and
+        why the verdict never says "safe".
       </li>
-      <li>
+      <li class="reveal" style="--d:120ms">
         <b>Headers can be stripped.</b> Some clients and gateways remove or rewrite
         headers before you see them. Less evidence means a less confident answer, not a
         safer message.
       </li>
-      <li>
+      <li class="reveal" style="--d:180ms">
         <b>The brand list is finite.</b> Lookalike detection compares against a fixed
-        list of commonly impersonated domains. A lookalike of a domain that isn't on that
-        list won't be named, though the link and alignment checks still apply.
+        list of commonly impersonated domains. A lookalike of a domain outside that list
+        won't be named, though the link and alignment checks still apply.
       </li>
-      <li>
-        <b>"Authenticated" is a statement about a domain, not a person.</b> It means the
-        message really came from where it claims. It does not mean the request inside it
-        is reasonable.
+      <li class="reveal" style="--d:240ms">
+        <b>"Authenticated" describes a domain, not a person.</b> It means the message
+        really came from where it claims. It says nothing about whether the request
+        inside it is reasonable.
       </li>
     </ul>
+  </section>
+
+  <!-- ─────────────────────────────────────────── cta -->
+  <section class="cta reveal">
+    <h2>Read the envelope,<br><em>not the letter.</em></h2>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#analyse">Check an email</a>
+      <a class="btn btn-ghost" href="https://github.com/Goofturtles/return-path" rel="noopener">View the source</a>
+    </div>
   </section>
 
 </main>
@@ -263,9 +437,7 @@
   <div class="foot-main">
     <p>
       <b>Return Path</b> — built for the TLN Cybersecurity Challenge, September 2026.
-      Everything runs in this tab: the page loads three JavaScript files and then makes
-      no further network requests. You can disconnect from the internet and it will
-      continue to work, which is the only honest way to handle somebody's private mail.
+      Vanilla JavaScript, no framework, no backend, no dependencies.
     </p>
     <p class="foot-small">
       The specimens are synthetic — written for this tool, containing no real message,

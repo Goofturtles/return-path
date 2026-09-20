@@ -72,6 +72,31 @@
     if (e.target.files && e.target.files[0]) readFile(e.target.files[0]);
   });
 
+  // Tabs: "Paste source" focuses the box, "Upload .eml" opens the picker.
+  // The upload tab is an action, so it hands selection straight back.
+  var tabs = document.querySelectorAll('.tab');
+  function selectTab(which) {
+    Array.prototype.forEach.call(tabs, function (t) {
+      var on = t.getAttribute('data-mode') === which;
+      t.classList.toggle('is-on', on);
+      t.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call(tabs, function (t) {
+    t.addEventListener('click', function () {
+      var mode = t.getAttribute('data-mode');
+      if (mode === 'file') {
+        selectTab('file');
+        $('file').click();
+        // Nothing is chosen yet; the paste view stays usable underneath.
+        setTimeout(function () { selectTab('paste'); }, 400);
+      } else {
+        selectTab('paste');
+        input.focus();
+      }
+    });
+  });
+
   ['dragenter', 'dragover'].forEach(function (ev) {
     drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); });
   });
@@ -119,7 +144,8 @@
     errorBox.hidden = true;
     render(result);
     $('results').hidden = false;
-    $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('results').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
   }
 
   /* ------------------------------------------------------------ render */
@@ -247,18 +273,41 @@
     });
   }
 
-  function findingNode(f, open) {
-    var d = el('details', { 'class': 'finding', 'data-s': f.severity });
-    if (open) d.setAttribute('open', '');
+  // A disclosure that animates. <details> can't be transitioned in every
+  // browser, so this is a button plus a 0fr→1fr grid row, which can.
+  function toggle(root, head) {
+    var open = root.getAttribute('data-open') === '1';
+    root.setAttribute('data-open', open ? '0' : '1');
+    head.setAttribute('aria-expanded', open ? 'false' : 'true');
+  }
 
-    d.appendChild(el('summary', {}, [
+  function initDisclosure(root) {
+    var head = root.querySelector('.disclosure-head, .finding-head');
+    if (!head) return;
+    if (!root.hasAttribute('data-open')) root.setAttribute('data-open', '0');
+    head.addEventListener('click', function () { toggle(root, head); });
+  }
+
+  function findingNode(f, open) {
+    var d = el('div', {
+      'class': 'finding disclosure',
+      'data-s': f.severity,
+      'data-open': open ? '1' : '0'
+    });
+
+    var head = el('button', {
+      'class': 'finding-head', type: 'button',
+      'aria-expanded': open ? 'true' : 'false'
+    }, [
       el('span', { 'class': 'sev-dot' }),
       el('span', { 'class': 'finding-title', text: f.title }),
       el('span', { 'class': 'finding-right' }, [
         el('span', { 'class': 'pill', text: f.severity === 'good' ? 'passed' : f.severity }),
         el('span', { 'class': 'finding-tag', text: f.tag })
       ])
-    ]));
+    ]);
+    head.addEventListener('click', function () { toggle(d, head); });
+    d.appendChild(head);
 
     var body = el('div', { 'class': 'finding-body' }, [
       el('p', { 'class': 'finding-why', text: f.why })
@@ -274,7 +323,10 @@
       });
       body.appendChild(ev);
     }
-    d.appendChild(body);
+
+    d.appendChild(el('div', { 'class': 'disclosure-wrap' }, [
+      el('div', { 'class': 'disclosure-body' }, [body])
+    ]));
     return d;
   }
 
@@ -353,19 +405,18 @@
   // Turn an HTML part into plain text with link placeholders. No parsing into
   // the DOM, no innerHTML — the markup is treated as a string throughout.
   function flatten(html) {
-    var out = html
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/<(script|style|head|title|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ');
+    // Both the stripping and the anchor pattern come from the engine. If this
+    // file kept its own copies they would drift, and a link the engine skipped
+    // but the renderer tokenised would shift every later placeholder — making
+    // the annotated view attribute the wrong destination to a visible link.
+    var out = RP.stripNonContent(html);
 
     var i = 0;
-    out = out.replace(
-      /<a\b[^>]*?href\s*=\s*("([^"]*)"|'([^']*)'|([^\s">]+))[^>]*>([\s\S]*?)<\/a\s*>/gi,
-      function (m, q, dq, sq, bare, text) {
-        var token = OPEN + i + CLOSE;
-        i++;
-        return token;
-      }
-    );
+    out = out.replace(RP.anchorRegex(), function () {
+      var token = OPEN + i + CLOSE;
+      i++;
+      return token;
+    });
 
     out = out
       .replace(/<\s*br\s*\/?>/gi, '\n')
@@ -632,4 +683,23 @@
   input.addEventListener('keydown', function (e) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); run(); }
   });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-disclosure]'), initDisclosure);
+
+  // Scroll reveal. Anything already on screen at load stays put rather than
+  // animating in behind the fold.
+  var reveals = document.querySelectorAll('.reveal');
+  if (!window.IntersectionObserver ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    Array.prototype.forEach.call(reveals, function (n) { n.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    Array.prototype.forEach.call(reveals, function (n) { io.observe(n); });
+  }
 })();
