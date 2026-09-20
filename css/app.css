@@ -88,13 +88,36 @@ kbd {
    --tile is the panorama's display width. Each layer is three tiles wide and
    travels exactly one tile, so the loop is exact; the height follows the
    render's own 3600x553 aspect so the clouds are never stretched. */
+/* The sky is a 360-degree equirectangular render of a real volumetric cloud
+   deck (tools/render_clouds.py), cropped to its cloud band. It tiles because
+   it is a full panorama: drifting it sideways is turning your head, and after
+   one full turn you are looking at the same sky again. No fade, no mirror.
+
+   --tile is the panorama's display width. Each layer is three tiles wide and
+   travels exactly one tile, so the loop is exact; the height follows the
+   render's own 3600x553 aspect so the clouds are never stretched.
+
+   The band is pulled well above the fold on purpose. Only its thin lower
+   wisps reach the page: background should frame the content from the edges,
+   not sit behind the headline competing with it. */
 .sky {
   --tile: 2730px;
-  position: absolute; top: -56px; left: 0; right: 0;
+  position: absolute; top: -142px; left: 0; right: 0;
   height: 419px;                       /* 2730 * 553/3600 */
   z-index: 0; pointer-events: none; overflow: hidden;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.86) 52%, transparent 97%);
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.86) 52%, transparent 97%);
+  /* A single gradient. Two masks with mask-composite cut a hard horizontal
+     band across the middle in Chromium. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.66) 54%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.66) 54%, transparent 92%);
+}
+
+/* Clears the centre so the headline sits on clean black and the cloud is left
+   framing the corners. Painted in the page colour rather than masked, because
+   compositing two masks is what caused the band above. */
+.sky::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 46% 125% at 50% 76%,
+      var(--bg) 0%, rgba(7, 8, 9, .90) 30%, rgba(7, 8, 9, .34) 62%, transparent 86%);
 }
 
 .cloud {
@@ -113,21 +136,33 @@ kbd {
   to   { transform: translate3d(calc(var(--tile) * -1), 0, 0); }
 }
 
-/* Dim on purpose: this is night cloud, not daylight. */
+/* Dim on purpose: night cloud at the edge of vision, not a photograph. */
 .cloud-near {
   background-image: url("../img/cloud-near.webp");
-  opacity: .40;
+  opacity: .44;
   animation-duration: 150s;
 }
 .cloud-mid {
   background-image: url("../img/cloud-mid.webp");
-  opacity: .26;
+  opacity: .27;
   animation-duration: 260s;
 }
 .cloud-far {
   background-image: url("../img/cloud-far.webp");
   opacity: .17;
   animation-duration: 420s;
+}
+
+/* A cool wash at the very top edge, the way Bolt and Cosmos light a dark
+   hero: colour at the boundary, nothing in the middle. */
+.hero::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  top: -220px; left: 50%; transform: translateX(-50%);
+  width: min(1500px, 120%); height: 460px;
+  background:
+    radial-gradient(ellipse 40% 60% at 22% 60%, rgba(95,216,203,.13), transparent 70%),
+    radial-gradient(ellipse 42% 62% at 78% 56%, rgba(78,132,224,.12), transparent 72%);
+  filter: blur(42px);
 }
 
 /* Fine film grain. Keeps large flat areas of near-black from looking like a
