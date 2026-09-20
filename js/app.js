@@ -144,8 +144,11 @@
     errorBox.hidden = true;
     render(result);
     $('results').hidden = false;
-    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    $('results').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    // Through the same easing, so the report does not fight the page's own
+    // scrolling on the way down.
+    var top = $('results').getBoundingClientRect().top + window.scrollY - 12;
+    if (window.__rpScrollTo) window.__rpScrollTo(top);
+    else $('results').scrollIntoView({ block: 'start' });
     $('results').focus({ preventScroll: true });
   }
 
@@ -631,7 +634,156 @@
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); run(); }
   });
 
+  // Native smooth-behaviour would fight the easing above.
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.style.scrollBehavior = 'auto';
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll('[data-disclosure]'), initDisclosure);
+
+  // Inertial scrolling.
+  //
+  // The page keeps its real scroll position - this eases window.scrollY toward
+  // a target rather than faking it with a transform, so the scrollbar, anchor
+  // links, find-in-page and screen readers all still work.
+  //
+  // Three things it has to survive:
+  //   fast flings   - deltas accumulate in full and the target is clamped to
+  //                   the document, so a hard scroll lands where it should
+  //                   instead of overshooting into nothing
+  //   nested scroll - the report has scrollable panels; a wheel over one that
+  //                   can still move in that direction is left alone
+  //   outside moves - scrollbar drags, keyboard paging and the app's own
+  //                   scroll-into-view resync the target instead of fighting it
+  var smooth = (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Touch already has momentum, and hijacking it feels worse than native.
+    var touch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+    var target = window.scrollY || 0;
+    var current = target;
+    var lastSet = target;
+    var lastSelfAt = 0;        // when we last moved the page ourselves
+    var raf = 0;
+    var lastFrameAt = 0;
+    // Per-16.7ms pull. Applied against real elapsed time below, so a device
+    // running at 30fps - or a throttled background tab - still settles in the
+    // same wall-clock time instead of crawling.
+    var EASE = 0.16;
+
+    function maxScroll() {
+      return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    }
+
+    function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; lastFrameAt = 0; } }
+
+    function tick(now) {
+      var dt = lastFrameAt ? Math.min(now - lastFrameAt, 64) : 16.7;
+      lastFrameAt = now;
+      var k = 1 - Math.pow(1 - EASE, dt / 16.7);
+      var d = target - current;
+      if (Math.abs(d) < 0.5) {
+        current = target;
+        window.scrollTo(0, Math.round(current));
+        lastSet = window.scrollY; lastSelfAt = performance.now();
+        raf = 0; lastFrameAt = 0;
+        return;
+      }
+      current += d * k;
+      window.scrollTo(0, Math.round(current));
+      lastSet = window.scrollY; lastSelfAt = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+
+    function start() { if (!raf) { lastFrameAt = 0; raf = requestAnimationFrame(tick); } }
+
+    function to(y, immediate) {
+      target = Math.max(0, Math.min(y, maxScroll()));
+      if (immediate || reduce || touch) {
+        current = target;
+        window.scrollTo(0, Math.round(target));
+        lastSet = window.scrollY; lastSelfAt = performance.now();
+        return;
+      }
+      start();
+    }
+
+    if (reduce || touch) {
+      return { to: function (y) { window.scrollTo(0, y); } };
+    }
+
+    // A wheel over something that can still scroll in that direction belongs
+    // to that element, not to the page.
+    function insideScroller(node, dy) {
+      while (node && node !== document.body && node !== document.documentElement) {
+        if (node.nodeType === 1) {
+          var cs = getComputedStyle(node);
+          var oy = cs.overflowY;
+          if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+            var atTop = node.scrollTop <= 0;
+            var atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
+            if (!((dy < 0 && atTop) || (dy > 0 && atEnd))) return true;
+          }
+          if (node.tagName === 'TEXTAREA' && node.scrollHeight > node.clientHeight + 1) return true;
+        }
+        node = node.parentNode;
+      }
+      return false;
+    }
+
+    window.addEventListener('wheel', function (e) {
+      if (e.ctrlKey) return;                       // pinch zoom
+      if (insideScroller(e.target, e.deltaY)) return;
+
+      // Firefox reports lines, some mice report pages.
+      var dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16;
+      else if (e.deltaMode === 2) dy *= window.innerHeight;
+
+      e.preventDefault();
+      // If the page moved without us, trust the page - but only if it was not
+      // our own easing that moved it a moment ago.
+      if (performance.now() - lastSelfAt > 140 && Math.abs(window.scrollY - lastSet) > 2) {
+        current = target = window.scrollY;
+      }
+      target = Math.max(0, Math.min(target + dy, maxScroll()));
+      start();
+    }, { passive: false });
+
+    // Anything that moves the page by other means - scrollbar, keyboard,
+    // find-in-page - becomes the new truth.
+    window.addEventListener('scroll', function () {
+      // Ignore the echo of our own scrollTo. Scroll events coalesce and arrive
+      // a frame or two late, so without this a fast fling resyncs against
+      // itself and stops dead partway.
+      if (performance.now() - lastSelfAt < 140) return;
+      if (Math.abs(window.scrollY - lastSet) > 2) {
+        stop();
+        current = target = window.scrollY;
+      }
+    }, { passive: true });
+
+    window.addEventListener('resize', function () {
+      target = Math.max(0, Math.min(target, maxScroll()));
+    }, { passive: true });
+
+    // In-page links ride the same easing.
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a) return;
+      var id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      var el = document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      to(el.getBoundingClientRect().top + window.scrollY - 12);
+      history.replaceState(null, '', '#' + id);
+    });
+
+    return { to: to };
+  })();
+
+  window.__rpScrollTo = smooth.to;
 
   // Parallax. Stronger than before: the sky keeps most of the page's own
   // movement so it hangs in frame, and each plate drifts against the scroll.
@@ -646,6 +798,9 @@
     var sky = document.querySelector('.sky');
     var SKY_LAG = 0.86;     // holds almost with the page, so it really lingers
     var SKY_FADE = 900;
+    // ...but never travel so far that the element's own bottom edge rides up
+    // into view. Scrolling up fast used to expose it as a hard horizontal cut.
+    var SKY_MAX = 180;
 
     var items = [];
     Array.prototype.forEach.call(document.querySelectorAll('[data-par]'), function (n) {
@@ -653,12 +808,16 @@
     });
 
     var skyCur = 0, skyOp = 1;
-    var EASE = 0.32;      // converges in a handful of frames, still smooth
+    var EASE = 0.20;      // per 16.7ms, applied against real elapsed time
     var rafId = 0;
+    var prev = 0;
 
     function lerp(a, b, t) { return a + (b - a) * t; }
 
-    function frame() {
+    function frame(now) {
+      var dt = prev ? Math.min(now - prev, 64) : 16.7;
+      prev = now;
+      var k = 1 - Math.pow(1 - EASE, dt / 16.7);
       var y = window.scrollY || window.pageYOffset;
       var vh = window.innerHeight;
       var i;
@@ -676,8 +835,8 @@
       // write pass
       if (sky) {
         var t = Math.min(y / SKY_FADE, 1);
-        skyCur = lerp(skyCur, y * SKY_LAG, EASE);
-        skyOp = lerp(skyOp, 1 - t * t, EASE);
+        skyCur = lerp(skyCur, Math.min(y * SKY_LAG, SKY_MAX), k);
+        skyOp = lerp(skyOp, 1 - t * t, k);
         if (t >= 1 && skyOp < 0.01) {
           sky.style.visibility = 'hidden';
         } else {
@@ -691,7 +850,7 @@
       for (i = 0; i < items.length; i++) {
         var it = items[i];
         if (it.skip) continue;
-        it.cur = lerp(it.cur, it.mid * it.rate * 100, EASE);
+        it.cur = lerp(it.cur, it.mid * it.rate * 100, k);
         it.node.style.transform = 'translate3d(0,' + it.cur.toFixed(1) + 'px,0)';
       }
 
@@ -702,7 +861,7 @@
     // restore below would schedule a SECOND loop and every hide/show doubles.
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) { cancelAnimationFrame(rafId); rafId = 0; }
-      else if (!rafId) { rafId = requestAnimationFrame(frame); }
+      else if (!rafId) { prev = 0; rafId = requestAnimationFrame(frame); }
     });
 
     rafId = requestAnimationFrame(frame);

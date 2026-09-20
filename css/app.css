@@ -110,12 +110,12 @@ kbd {
 .sky {
   --tile: 2730px;
   position: absolute; top: -142px; left: 0; right: 0;
-  height: 419px;                       /* 2730 * 553/3600 */
+  height: 600px;                       /* 2730 * 553/3600 */
   z-index: 0; pointer-events: none; overflow: hidden;
   /* A single gradient. Two masks with mask-composite cut a hard horizontal
      band across the middle in Chromium. */
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.66) 54%, transparent 92%);
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.66) 54%, transparent 92%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.92) 22%, rgba(0,0,0,.62) 46%, rgba(0,0,0,.30) 66%, rgba(0,0,0,.10) 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.92) 22%, rgba(0,0,0,.62) 46%, rgba(0,0,0,.30) 66%, rgba(0,0,0,.10) 82%, transparent 100%);
 }
 
 /* Clears the centre so the headline sits on clean black and the cloud is left
