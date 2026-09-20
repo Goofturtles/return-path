@@ -633,11 +633,98 @@
 
   Array.prototype.forEach.call(document.querySelectorAll('[data-disclosure]'), initDisclosure);
 
+  // Parallax and scroll-driven depth.
+  //
+  // Every value is LERPED toward its target each frame rather than snapped to
+  // the scroll position. That is what makes it feel smooth and weighted: the
+  // page stops, the motion keeps settling for a few frames. Native scrolling is
+  // left completely alone - hijacking the wheel would break the report's own
+  // scroll-into-view, keyboard paging and the scrollbar.
+  (function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var sky = document.querySelector('.sky');
+    var SKY_FADE = 980;
+    var SKY_LAG = 0.80;   // keeps 80% of the page's movement, so it really hangs
+
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll('[data-par]'), function (n) {
+      items.push({
+        node: n,
+        rate: parseFloat(n.getAttribute('data-par')) || 0.2,
+        tilt: parseFloat(n.getAttribute('data-tilt')) || 0,
+        cur: 0, curTilt: 0
+      });
+    });
+
+    var skyCur = 0, skyOpCur = 1;
+    var EASE = 0.15;      // how hard each frame pulls toward the target
+    var running = true;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function frame() {
+      var y = window.scrollY || window.pageYOffset;
+      var vh = window.innerHeight;
+
+      if (sky) {
+        var skyTarget = y * SKY_LAG;
+        var t = Math.min(y / SKY_FADE, 1);
+        var opTarget = 1 - t * t;
+        skyCur = lerp(skyCur, skyTarget, EASE);
+        skyOpCur = lerp(skyOpCur, opTarget, EASE);
+        if (opTarget <= 0.002 && skyOpCur < 0.01) {
+          sky.style.visibility = 'hidden';
+        } else {
+          sky.style.visibility = 'visible';
+          // Positive translate: pushed back down as the page rises, so it holds
+          // in frame and lingers. Negative would rush it off the top.
+          sky.style.transform = 'translate3d(0,' + skyCur.toFixed(2) + 'px,0)';
+          sky.style.opacity = skyOpCur.toFixed(3);
+        }
+      }
+
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        var r = it.node.getBoundingClientRect();
+        if (r.bottom < -300 || r.top > vh + 300) continue;
+
+        // -1 above the fold, 0 centred, +1 below: the element's progress
+        // through the viewport.
+        var mid = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
+        mid = Math.max(-1, Math.min(1, mid));
+
+        it.cur = lerp(it.cur, mid * it.rate * 100, EASE);
+        var css = 'translate3d(0,' + it.cur.toFixed(2) + 'px,0)';
+
+        if (it.tilt) {
+          // A little rotation about X as it passes, so the plate reads as a
+          // surface in space rather than a flat rectangle sliding by.
+          it.curTilt = lerp(it.curTilt, mid * it.tilt, EASE);
+          css += ' perspective(1400px) rotateX(' + it.curTilt.toFixed(2) + 'deg)' +
+                 ' scale(' + (1 - Math.abs(it.curTilt) * 0.004).toFixed(4) + ')';
+        }
+        it.node.style.transform = css;
+      }
+
+      if (running) requestAnimationFrame(frame);
+    }
+
+    // Pause the loop when the tab is hidden; nothing is moving to look at.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { running = false; }
+      else if (!running) { running = true; requestAnimationFrame(frame); }
+    });
+
+    requestAnimationFrame(frame);
+  })();
+
   // Scroll reveal. Anything already on screen at load stays put rather than
   // animating in behind the fold.
-  var reveals = document.querySelectorAll('.reveal');
-  if (!window.IntersectionObserver ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  var reveals = document.querySelectorAll('.reveal, .reveal-l, .reveal-r');
+  var calmed = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!window.IntersectionObserver || calmed) {
     Array.prototype.forEach.call(reveals, function (n) { n.classList.add('in'); });
   } else {
     var io = new IntersectionObserver(function (entries) {
@@ -649,4 +736,34 @@
     }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
     Array.prototype.forEach.call(reveals, function (n) { io.observe(n); });
   }
+
+  // The privacy figures count up the first time they are seen. They are all
+  // zero, so this counts *down* to nothing — which is the point being made.
+  (function () {
+    var stats = document.querySelectorAll('.privacy-stats b');
+    if (!stats.length) return;
+    if (calmed || !window.IntersectionObserver) return;
+
+    var spin = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var node = entry.target;
+        spin.unobserve(node);
+        var target = node.textContent.trim();
+        var from = 24;
+        var start = null;
+
+        function step(now) {
+          if (start === null) start = now;
+          var t = Math.min((now - start) / 900, 1);
+          var eased = 1 - Math.pow(1 - t, 3);
+          node.textContent = t >= 1 ? target : String(Math.round(from * (1 - eased)));
+          if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.6 });
+
+    Array.prototype.forEach.call(stats, function (n) { spin.observe(n); });
+  })();
 })();

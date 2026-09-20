@@ -37,7 +37,13 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* clip, not hidden: hidden on body alone still lets <html> report the wide
+     content and produce a scrollbar, while hidden on both would make them
+     scroll containers and break position:sticky. */
+  overflow-x: clip;
+}
 
 body {
   margin: 0;
@@ -47,7 +53,7 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4 { line-height: 1.25; margin: 0 0 .5em; letter-spacing: -0.01em; }
@@ -208,6 +214,17 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   transition-delay: var(--d, 0ms);
 }
 .reveal.in { opacity: 1; transform: none; }
+
+/* Directional variants, so a two-column section resolves inward rather than
+   both halves rising in parallel. */
+.reveal-l, .reveal-r {
+  opacity: 0;
+  transition: opacity .9s var(--ease), transform .9s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.reveal-l { transform: translateX(-34px); }
+.reveal-r { transform: translateX(34px); }
+.reveal-l.in, .reveal-r.in { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -850,6 +867,69 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 .step p { color: var(--ink-3); font-size: .89rem; line-height: 1.7; margin: 0; max-width: 62ch; }
 .step b { color: var(--ink-2); font-weight: 500; }
 
+/* how it works - Greptile's layout: tag, heading, ruled pill, framed steps */
+
+.how { max-width: var(--maxw); margin: 0 auto; padding: 84px 28px; }
+.how-head { max-width: 52rem; }
+.how-tag {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px; line-height: 1.8;
+}
+.how h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.1;
+  letter-spacing: -0.008em; color: #f2f5fa; margin: 0 0 16px; padding-bottom: .04em;
+}
+.how-sub { color: var(--ink-2); font-size: 1rem; line-height: 1.7; max-width: 58ch; margin: 0; }
+
+/* a hairline across the section with the label sitting in a gap */
+.how-rule {
+  position: relative; height: 1px; background: var(--line);
+  margin: 46px 0 34px; display: flex; justify-content: center;
+}
+.how-rule span {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: var(--bg); padding: 0 14px;
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--ink-4); line-height: 1.8;
+}
+
+.how-steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px;
+}
+.how-step { min-width: 0; will-change: transform; }
+.how-shot {
+  height: 190px; overflow: hidden; margin-bottom: 18px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg-2);
+  position: relative;
+}
+/* corner ticks, the way Greptile frames each visual */
+.how-shot::before, .how-shot::after {
+  content: ""; position: absolute; width: 9px; height: 9px; pointer-events: none;
+  border: 1px solid var(--accent-dim);
+}
+.how-shot::before { left: 7px; top: 7px; border-right: 0; border-bottom: 0; }
+.how-shot::after { right: 7px; bottom: 7px; border-left: 0; border-top: 0; }
+.how-shot img {
+  display: block; width: 100%; height: auto;
+  transform: scale(1.01); transform-origin: 50% 0;
+  transition: transform .6s var(--ease);
+}
+.how-step:hover .how-shot img { transform: scale(1.05); }
+
+.how-n {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-4); margin: 0 0 7px; line-height: 1.8;
+}
+.how-step h3 {
+  font-size: 1.04rem; font-weight: 500; letter-spacing: -0.012em;
+  color: var(--ink); margin: 0 0 9px; line-height: 1.35;
+}
+.how-step p { color: var(--ink-3); font-size: .88rem; line-height: 1.68; margin: 0; }
+.how-step b { color: var(--ink-2); font-weight: 500; }
+
 /* privacy */
 
 .privacy-card {
@@ -881,6 +961,173 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 .privacy-stats span { color: var(--ink-3); font-size: .85rem; line-height: 1.6; }
 .privacy-cost { color: var(--ink-4); font-size: .86rem; line-height: 1.7; max-width: 62ch; margin: 0; }
+
+/* ticker: the header names this thing actually reads, moving past */
+
+.ticker-wrap {
+  overflow: hidden;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  padding: 16px 0;
+  margin: 26px 0 8px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.ticker { display: flex; width: max-content; animation: tick 46s linear infinite; }
+.ticker-run {
+  display: flex; align-items: center; gap: 22px; padding-right: 22px;
+  font-family: var(--mono); font-size: .82rem; line-height: 1.8;
+  color: var(--ink-4); white-space: nowrap;
+}
+.ticker-run i { color: var(--accent-dim); font-style: normal; }
+@keyframes tick {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }   /* exactly one of the two runs */
+}
+
+/* showcase: copy one side, a real screenshot the other */
+
+.showcase {
+  max-width: var(--maxw); margin: 0 auto;
+  padding: 76px 28px;
+  display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 30px 56px; align-items: center;
+}
+.showcase-flip .showcase-copy { order: 2; }
+.showcase-flip .showcase-shot { order: 1; }
+
+.showcase-copy h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.12;
+  letter-spacing: -0.008em; color: #f2f5fa; margin: 0 0 18px; padding-bottom: .04em;
+}
+
+.tickList { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 11px; }
+.tickList li {
+  position: relative; padding-left: 26px;
+  color: var(--ink-2); font-size: .92rem; line-height: 1.6;
+}
+.tickList li::before {
+  content: ""; position: absolute; left: 2px; top: .52em;
+  width: 11px; height: 6px; border-left: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent); transform: rotate(-45deg);
+}
+
+.showcase-shot {
+  margin: 0; position: relative;
+  transform-style: preserve-3d; will-change: transform;
+}
+/* The reveal animates opacity only on parallax elements, because the rAF loop
+   owns their transform and the two would overwrite each other. */
+.reveal-l[data-par], .reveal-r[data-par], .reveal[data-par] { transform: none; }
+.showcase-shot img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 30px 70px -28px rgba(0,0,0,.92), 0 0 90px -50px rgba(95,216,203,.35);
+  transition: transform .6s var(--ease);
+}
+.showcase-shot::after {
+  content: ""; position: absolute; inset: -18% -8% auto -8%; height: 62%;
+  background: radial-gradient(ellipse 50% 60% at 50% 100%, rgba(95,216,203,.13), transparent 70%);
+  filter: blur(30px); pointer-events: none; z-index: -1;
+}
+.showcase-shot:hover img { transform: translateY(-5px); }
+
+/* bento */
+
+.bento {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.bcard {
+  position: relative; overflow: hidden; will-change: transform;
+  background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 15px;
+  padding: 0 0 22px;
+  transition: border-color .35s var(--ease), background .35s var(--ease), transform .35s var(--ease);
+}
+.bcard:hover { border-color: #2c3543; background: var(--panel); transform: translateY(-3px); }
+
+.bcard-shot {
+  height: 178px; overflow: hidden; margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent);
+  mask-image: linear-gradient(180deg, #000 62%, transparent);
+}
+.bcard-shot img {
+  display: block; width: 100%; height: auto;
+  transform: scale(1.02); transform-origin: 50% 0;
+  transition: transform .6s var(--ease);
+}
+.bcard:hover .bcard-shot img { transform: scale(1.06); }
+
+.bcard h3 {
+  font-size: 1.02rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.012em;
+  color: var(--ink); margin: 0 0 9px; padding: 0 22px;
+}
+.bcard p { color: var(--ink-3); font-size: .87rem; line-height: 1.68; margin: 0; padding: 0 22px; }
+.bcard code { font-size: .84em; background: rgba(255,255,255,.04); }
+.bcard b { color: var(--ink-2); font-weight: 500; }
+
+/* the wide one carries the argument, so it gets two columns and a side layout */
+.bcard-wide {
+  grid-column: span 2;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center; gap: 0; padding: 0;
+}
+.bcard-wide .bcard-shot {
+  height: 100%; margin: 0; border-bottom: 0; border-right: 1px solid var(--line);
+  -webkit-mask-image: none; mask-image: none;
+  display: flex; align-items: center;
+}
+.bcard-wide .bcard-body { padding: 26px 26px 26px 24px; }
+.bcard-wide h3 { padding: 0; font-size: 1.14rem; margin-bottom: 11px; }
+.bcard-wide p { padding: 0; }
+
+/* the two cards that are type rather than screenshot */
+.bcard-glyph {
+  display: flex; flex-direction: column; justify-content: center;
+  height: 178px; margin-bottom: 18px; padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.022), transparent);
+  font-family: var(--mono); font-size: 1.02rem; line-height: 1.5;
+  color: var(--ink-4); letter-spacing: -0.01em; word-break: break-all;
+}
+.bcard-glyph em {
+  font-style: normal; color: var(--critical); font-size: 1.28rem; margin-top: 7px;
+}
+.bcard-glyph-file em { color: var(--high); }
+
+/* photographs */
+
+.privacy-photo {
+  position: absolute; inset: -12% 0; width: 100%; height: 124%;
+  will-change: transform;
+  object-fit: cover; opacity: .10; pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 80% 90% at 82% 30%, #000, transparent 72%);
+  mask-image: radial-gradient(ellipse 80% 90% at 82% 30%, #000, transparent 72%);
+}
+
+.limits-photo { margin: 0 0 44px; position: relative; will-change: transform; }
+.photo-frame {
+  display: block; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 15px;
+  height: clamp(200px, 30vw, 330px);
+}
+.limits-photo img {
+  display: block; width: 100%;
+  /* Taller than the frame, so there is room to travel inside it. */
+  height: calc(clamp(200px, 30vw, 330px) + 130px);
+  margin-top: -65px;
+  object-fit: cover;
+  filter: brightness(.62) saturate(.75);
+  will-change: transform;
+}
+.limits-photo figcaption {
+  margin-top: 13px; color: var(--ink-4);
+  font-size: .85rem; line-height: 1.65; max-width: 62ch;
+}
 
 /* limits */
 
@@ -914,6 +1161,17 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 /* ══════════════════════════════════════════════ responsive */
 
+@media (max-width: 1000px) {
+  .how-steps { grid-template-columns: 1fr; gap: 30px; }
+  .how { padding: 60px 28px; }
+  .showcase { grid-template-columns: 1fr; gap: 28px; padding: 56px 28px; }
+  .showcase-flip .showcase-copy { order: 1; }
+  .showcase-flip .showcase-shot { order: 2; }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bcard-wide { grid-column: span 2; grid-template-columns: 1fr; }
+  .bcard-wide .bcard-shot { border-right: 0; border-bottom: 1px solid var(--line); height: 200px; }
+}
+
 @media (max-width: 1080px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -944,6 +1202,15 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 
 @media (max-width: 680px) {
+  .showcase { padding: 44px 16px; }
+  .how { padding: 48px 16px; }
+  .how-shot { height: 170px; }
+  .bento { grid-template-columns: 1fr; gap: 12px; }
+  .bcard-wide { grid-column: span 1; }
+  .bcard-shot, .bcard-glyph { height: 150px; }
+  .ticker-run { font-size: .74rem; gap: 16px; }
+  .limits-photo { margin-bottom: 30px; }
+
   body { font-size: 15px; }
   .topbar { padding: 16px; gap: 12px; }
   .topbar-right { gap: 14px; }

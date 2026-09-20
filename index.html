@@ -212,140 +212,186 @@
 
   </section>
 
-  <!-- ─────────────────────────────────────────── what it catches -->
-  <section class="section" id="catches">
+  <!-- ─────────────────────────────────────────── the headers marquee -->
+  <section class="ticker-wrap" aria-hidden="true">
+    <div class="ticker">
+      <div class="ticker-run">
+        <span>Return-Path</span><i>·</i><span>Authentication-Results</span><i>·</i>
+        <span>DKIM-Signature</span><i>·</i><span>Received-SPF</span><i>·</i>
+        <span>Reply-To</span><i>·</i><span>Message-ID</span><i>·</i>
+        <span>Content-Disposition</span><i>·</i><span>List-Unsubscribe</span><i>·</i>
+        <span>Received</span><i>·</i><span>From</span><i>·</i>
+      </div>
+      <div class="ticker-run">
+        <span>Return-Path</span><i>·</i><span>Authentication-Results</span><i>·</i>
+        <span>DKIM-Signature</span><i>·</i><span>Received-SPF</span><i>·</i>
+        <span>Reply-To</span><i>·</i><span>Message-ID</span><i>·</i>
+        <span>Content-Disposition</span><i>·</i><span>List-Unsubscribe</span><i>·</i>
+        <span>Received</span><i>·</i><span>From</span><i>·</i>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────── showcase: the two senders -->
+  <section class="showcase" id="catches">
+    <div class="showcase-copy reveal-l">
+      <p class="kicker">The two senders</p>
+      <h2>Every email has an address you are shown, and one the servers actually used.</h2>
+      <p class="section-lede">
+        Only the second gets checked. When they disagree and nothing ties them
+        together, that gap is the whole attack — and it is invisible in every
+        mail client ever made.
+      </p>
+      <ul class="tickList">
+        <li>From vs. Return-Path, side by side</li>
+        <li>DKIM's signing domain, not just its badge</li>
+        <li>Where a reply would really go</li>
+      </ul>
+    </div>
+    <figure class="showcase-shot reveal-r" data-par="0.20" data-tilt="9">
+      <img src="img/ui-envelope.webp" width="760" height="430" loading="lazy" decoding="async"
+           alt="The envelope panel: From alerts@paypa1.com marked impersonation, Return-Path on a different domain, DKIM unsigned, and Reply-To pointing elsewhere.">
+    </figure>
+  </section>
+
+  <!-- ─────────────────────────────────────────── showcase: annotated -->
+  <section class="showcase showcase-flip">
+    <div class="showcase-copy reveal-r">
+      <p class="kicker">Links, exposed</p>
+      <h2>The text of a link is decoration. Only the href is real.</h2>
+      <p class="section-lede">
+        The message is rebuilt as plain text — its HTML is never rendered — and
+        every link becomes a button. Click one and it tells you where it
+        actually goes, and which trick it is using to hide that.
+      </p>
+      <ul class="tickList">
+        <li>Anchor text against the true destination</li>
+        <li><code>@</code>-in-URL misdirection and bare IPs</li>
+        <li>Shorteners, <code>javascript:</code> and <code>data:</code> URLs</li>
+      </ul>
+    </div>
+    <figure class="showcase-shot reveal-l" data-par="0.20" data-tilt="-9">
+      <img src="img/ui-message.webp" width="760" height="319" loading="lazy" decoding="async"
+           alt="The annotated message: a link reading paypal.com/signin is highlighted red, and an open note shows it opens mailer-7f2a.top instead.">
+    </figure>
+  </section>
+
+  <!-- ─────────────────────────────────────────── bento -->
+  <section class="section">
     <div class="section-head reveal">
       <p class="kicker">What it catches</p>
       <h2>Eight ways an email lies about<br>where it came from.</h2>
       <p class="section-lede">
-        None of them involve spelling. All of them are visible in the headers, and every
-        one is something a real message almost never does.
+        None of them involve spelling. All of them are visible in the headers,
+        and every one is something real mail almost never does.
       </p>
     </div>
 
-    <div class="cards">
-      <article class="card reveal" style="--d:0ms">
-        <span class="card-n">01</span>
-        <h3>The two senders disagree</h3>
-        <p>
-          The <code>From:</code> you're shown and the <code>Return-Path:</code> the
-          servers used are different domains, and nothing ties them together. This is
-          how a message passes SPF while appearing to come from someone else.
-        </p>
-      </article>
-
-      <article class="card reveal" style="--d:60ms">
-        <span class="card-n">02</span>
-        <h3>The domain owner disowns it</h3>
-        <p>
-          DMARC is the sender's own published policy. A <code>fail</code> means the
-          organisation named in the From line has effectively stated this did not come
-          from them.
-        </p>
-      </article>
-
-      <article class="card reveal" style="--d:120ms">
-        <span class="card-n">03</span>
+    <div class="bento">
+      <article class="bcard reveal" style="--d:0ms" data-par="0.13">
+        <div class="bcard-shot"><img src="img/ui-finding.webp" width="760" height="180" loading="lazy" decoding="async"
+          alt="A finding reading: the display name is itself a fake email address."></div>
         <h3>A fake address in the name field</h3>
-        <p>
-          Display names are free text and never verified. Put
-          <code>service@paypal.com</code> there and every phone shows it, because mobile
-          mail clients display the name and hide the real address entirely.
-        </p>
+        <p>Display names are free text and never verified. Put <code>service@paypal.com</code>
+           there and every phone shows it, because mobile clients hide the real address.</p>
       </article>
 
-      <article class="card reveal" style="--d:180ms">
-        <span class="card-n">04</span>
-        <h3>A domain that isn't the domain</h3>
-        <p>
-          <code>xn--pypal-4ve.com</code> renders on screen as <b>pаypal.com</b> — with a
-          Cyrillic а. Punycode is decoded and confusables are folded, so
-          <code>paypa1.com</code> and <code>rnicrosoft.com</code> surface too.
-        </p>
-      </article>
-
-      <article class="card reveal" style="--d:240ms">
-        <span class="card-n">05</span>
+      <article class="bcard reveal" style="--d:70ms" data-par="0.07">
+        <div class="bcard-shot"><img src="img/ui-links.webp" width="760" height="350" loading="lazy" decoding="async"
+          alt="The links table: visible text, real destination, domain, and the trick each link uses."></div>
         <h3>Links that go somewhere else</h3>
-        <p>
-          Anchor text is decoration; only the <code>href</code> is real. Text/destination
-          mismatches, <code>@</code>-in-URL misdirection, bare IPs and shorteners all get
-          pulled out and named.
-        </p>
+        <p>Text and destination compared for every link, with the specific
+           misdirection named rather than scored.</p>
       </article>
 
-      <article class="card reveal" style="--d:300ms">
-        <span class="card-n">06</span>
-        <h3>Your reply goes to a stranger</h3>
-        <p>
-          A <code>Reply-To:</code> on an unrelated domain is the engine of every
-          invoice-redirect and gift-card scam. The first message only has to survive long
-          enough for you to start a thread.
-        </p>
-      </article>
-
-      <article class="card reveal" style="--d:360ms">
-        <span class="card-n">07</span>
-        <h3>The filename isn't the file</h3>
-        <p>
-          <code>Remittance.pdf.js</code> appears in your downloads as
-          <code>Remittance.pdf</code>, because Windows hides known extensions. The one
-          that runs is the last one.
-        </p>
-      </article>
-
-      <article class="card reveal" style="--d:420ms">
-        <span class="card-n">08</span>
+      <article class="bcard reveal" style="--d:140ms" data-par="0.17">
+        <div class="bcard-shot"><img src="img/ui-route.webp" width="760" height="330" loading="lazy" decoding="async"
+          alt="The route panel: each Received hop in order with timestamps and deltas."></div>
         <h3>A route that doesn't add up</h3>
-        <p>
-          Every server stamps a <code>Received:</code> line on the way through. Read in
-          order, they're a timeline — and invented hops tend to report times that run
-          backwards.
-        </p>
+        <p>Every server stamps a <code>Received:</code> line. Read in order they are a
+           timeline — and invented hops report times that run backwards.</p>
+      </article>
+
+      <article class="bcard bcard-wide reveal" style="--d:0ms" data-par="0.09">
+        <div class="bcard-shot"><img src="img/ui-bec.webp" width="880" height="430" loading="lazy" decoding="async"
+          alt="The business email compromise verdict: SPF, DKIM and DMARC all pass, and the verdict is still Suspicious."></div>
+        <div class="bcard-body">
+          <h3>Every check passes. It is still an attack.</h3>
+          <p>
+            When somebody sends from a real mailbox they have stolen, the
+            cryptography is genuine — everything is, except the person typing.
+            This is the case that defeats every header tool, so it is one of the
+            built-in specimens rather than a footnote: all three checks green,
+            verdict still <b>Suspicious</b>, caught on a Reply-To divergence and a
+            stack of pressure tactics. It is also why the verdict never says
+            "safe".
+          </p>
+        </div>
+      </article>
+
+      <article class="bcard reveal" style="--d:70ms">
+        <span class="bcard-glyph" aria-hidden="true">xn--pypal-4ve<em>pаypal.com</em></span>
+        <h3>A domain that isn't the domain</h3>
+        <p>Punycode is decoded to what you would actually see. Confusables are
+           folded, so <code>paypa1.com</code> and <code>rnicrosoft.com</code> surface too.</p>
+      </article>
+
+      <article class="bcard reveal" style="--d:140ms">
+        <span class="bcard-glyph bcard-glyph-file" aria-hidden="true">Remittance.pdf<em>.js</em></span>
+        <h3>The filename isn't the file</h3>
+        <p>Windows hides known extensions, so this arrives looking like a PDF.
+           The one that runs is the last one.</p>
       </article>
     </div>
   </section>
 
   <!-- ─────────────────────────────────────────── how -->
-  <section class="section" id="how">
-    <div class="section-head reveal">
-      <p class="kicker">How it works</p>
-      <h2>Three steps, no account,<br>no upload.</h2>
+  <section class="how" id="how">
+    <div class="how-head reveal">
+      <p class="how-tag">[ method ]</p>
+      <h2>How Return Path reads an email</h2>
+      <p class="how-sub">
+        Roughly thirty deterministic rules over RFC 5322 headers. No model, no
+        score, no guessing &mdash; and every finding cites the header it came from.
+      </p>
     </div>
 
-    <ol class="steps">
-      <li class="step reveal" style="--d:0ms">
-        <span class="step-n">1</span>
-        <div>
-          <h3>Get the real source</h3>
-          <p>
-            In Gmail that's <b>Show original</b>; in Outlook, <b>View message source</b>.
-            What you get is the message as the servers saw it — headers included. Or just
-            drag the email to your desktop and drop the <code>.eml</code> here.
-          </p>
+    <div class="how-rule reveal" aria-hidden="true"><span>how it works</span></div>
+
+    <ol class="how-steps">
+      <li class="how-step reveal" style="--d:0ms" data-par="0.11">
+        <div class="how-shot">
+          <img src="img/ui-paste.webp" width="700" height="179" loading="lazy" decoding="async"
+               alt="The paste box holding the raw source of an email.">
         </div>
+        <p class="how-n">step 01</p>
+        <h3>You paste the real source</h3>
+        <p>Gmail calls it <b>Show original</b>, Outlook <b>View message source</b>.
+           That is the message as the servers saw it, headers and all. Or drop
+           a <code>.eml</code> straight onto the box.</p>
       </li>
-      <li class="step reveal" style="--d:80ms">
-        <span class="step-n">2</span>
-        <div>
-          <h3>Paste it in</h3>
-          <p>
-            The analysis runs in this tab, in about a millisecond. Roughly thirty
-            deterministic rules read the headers the way a mail administrator would —
-            no model, no scoring, no guessing.
-          </p>
+
+      <li class="how-step reveal" style="--d:90ms" data-par="0.16">
+        <div class="how-shot">
+          <img src="img/ui-verdict.webp" width="700" height="360" loading="lazy" decoding="async"
+               alt="The verdict card reading Forged, with five critical findings and what to do about it.">
         </div>
+        <p class="how-n">step 02</p>
+        <h3>It reads the envelope, not the letter</h3>
+        <p>Authentication, alignment, impersonation, lookalike domains, links,
+           attachments and the route &mdash; in about a millisecond, in this tab,
+           with nothing sent anywhere.</p>
       </li>
-      <li class="step reveal" style="--d:160ms">
-        <span class="step-n">3</span>
-        <div>
-          <h3>Read the evidence, not a score</h3>
-          <p>
-            You get a verdict, what to do about it, and a list of findings — each one
-            opening to show the exact header it came from. That's the difference between
-            something you trust and something you can check.
-          </p>
+
+      <li class="how-step reveal" style="--d:180ms" data-par="0.21">
+        <div class="how-shot">
+          <img src="img/ui-finding.webp" width="760" height="180" loading="lazy" decoding="async"
+               alt="A finding opened to reveal the exact header it was derived from.">
         </div>
+        <p class="how-n">step 03</p>
+        <h3>You get evidence, not a score</h3>
+        <p>Open any finding and it shows the header underneath it. That is the
+           difference between a tool you have to trust and one you can check.</p>
       </li>
     </ol>
   </section>
@@ -353,6 +399,8 @@
   <!-- ─────────────────────────────────────────── privacy -->
   <section class="section" id="privacy">
     <div class="privacy-card reveal">
+      <img class="privacy-photo" data-par="0.30" src="img/photo-machinery.webp" width="1280" height="720"
+           loading="lazy" decoding="async" aria-hidden="true" alt="">
       <div class="privacy-glow" aria-hidden="true"></div>
       <p class="kicker">Privacy</p>
       <h2>Nothing you paste ever leaves<br>this browser tab.</h2>
@@ -382,6 +430,14 @@
 
   <!-- ─────────────────────────────────────────── limits -->
   <section class="section" id="limits">
+    <figure class="limits-photo reveal">
+      <span class="photo-frame">
+        <img src="img/photo-night.webp" width="1280" height="720" loading="lazy" decoding="async"
+             data-par="0.28"
+             alt="A phone screen lighting a face in a dark room.">
+      </span>
+      <figcaption>The moment this is for: a message you cannot place, at an hour when nobody is around to ask.</figcaption>
+    </figure>
     <div class="section-head reveal">
       <p class="kicker">Limits</p>
       <h2>What this can't do.</h2>
