@@ -438,15 +438,10 @@ t('an octet over 255 is not accepted as an IP', () => {
   eq(RP.parseHops(h)[0].ip, '');
 });
 
-t('prototype keys in the body do not leak', () => {
-  const r = RP.analyze([
-    'From: a@b.com', 'Subject: hi', 'Date: Thu, 17 Sep 2026 06:12:40 -0400',
-    'Content-Type: text/html', '',
-    '<p>&constructor; &toString; hello</p>'
-  ].join('\n'));
-  ok(r.ok);
-  ok(r.parts[0].decoded.indexOf('constructor') !== -1, 'left as literal text');
-});
+// (The engine never decodes entities while parsing parts, so a test asserting
+// that here would pass with or without the guard. The real coverage is
+// 'entity decoding does not walk the prototype chain' below, which goes
+// through decodeEntities itself.)
 
 /* ---------- renderer/engine link agreement ---------- */
 
@@ -492,13 +487,13 @@ t('a body cannot forge a link placeholder', () => {
   // must never do. Raw private-use characters and numeric entities that
   // would decode into them are both blocked.
   const out = RP.flattenBody(
-    '<p>0 raw and &#xE000;0&#xE001; entity</p>' +
+    '<p>\uE0000\uE001 raw and &#xE000;0&#xE001; entity</p>' +
     '<a href="https://real.test/a">the only link</a>'
   );
   eq(tokens(out).length, 1, 'only the genuine anchor gets a placeholder');
 
   // Nothing outside our own marker may occupy the private-use range.
-  const pua = out.match(/[-]/g) || [];
+  const pua = out.match(/[\uE000-\uF8FF]/g) || [];
   eq(pua.length, 2, 'exactly one open and one close marker: ' + JSON.stringify(out));
 });
 
@@ -507,6 +502,20 @@ t('entity decoding does not walk the prototype chain', () => {
   eq(RP.decodeEntities('&constructor;'), '&constructor;');
   eq(RP.decodeEntities('&toString;'), '&toString;');
   eq(RP.decodeEntities('&amp; &lt;'), '& <');
+});
+
+t('extractLinks and flattenBody strip private-use characters identically', () => {
+  // Both must measure byte-identical input. If only one stripped PUA, an
+  // anchor could sit on opposite sides of the length bound in each, and every
+  // later placeholder would shift — the misattribution this pane must avoid.
+  const pad = 'y'.repeat(7995);
+  const html =
+    '<p><a href="https://one.test/a">start</a></p>' +
+    '<p><a href="https://two.test/b">\uE000\uE000\uE000\uE000\uE000\uE000' + pad + '</a></p>' +
+    '<p><a href="https://three.test/c">end</a></p>';
+  const links = RP.extractLinks([{ type: 'text/html', decoded: html }]);
+  eq(tokens(RP.flattenBody(html)).length, links.length,
+    'placeholder count must equal link count on both sides of the bound');
 });
 
 t('flattenBody drops anchors the engine also drops, keeping indexes aligned', () => {

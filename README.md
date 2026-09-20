@@ -95,6 +95,19 @@ arrives as a text node. See the header comment in `js/app.js`.
   really came from where it claims. It says nothing about whether the request inside it
   is reasonable.
 
+## The sky
+
+The hero background is a real 3D render, not a CSS gradient. 
+builds a volumetric cloud deck in Blender and photographs it from underneath with an
+**equirectangular** camera covering a full 360 degrees, so the clouds recede toward the
+horizon and catch the light on their tops.
+
+That camera choice is also what makes it loop. Drifting a 360-degree panorama sideways
+is turning your head; after one full turn you are looking at the same sky again,
+exactly. The tile is seamless by geometry rather than by cross-fading, and each layer
+travels exactly one tile width.  crops it to the cloud band and
+checks the wrap against the ordinary column-to-column difference before compressing.
+
 ## Layout
 
 ```

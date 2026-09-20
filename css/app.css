@@ -80,25 +80,28 @@ kbd {
 /* Haze drifting across the top of the page. Each layer is three seamless
    tiles wide and translates by exactly one tile, so the motion is continuous,
    one-directional and never reaches an edge. */
+/* The sky is a 360-degree equirectangular render of a real volumetric cloud
+   deck (tools/render_clouds.py), cropped to its cloud band. It tiles because
+   it is a full panorama: drifting it sideways is turning your head, and after
+   one full turn you are looking at the same sky again. No fade, no mirror.
+
+   --tile is the panorama's display width. Each layer is three tiles wide and
+   travels exactly one tile, so the loop is exact; the height follows the
+   render's own 3600x553 aspect so the clouds are never stretched. */
 .sky {
-  position: absolute; top: -90px; left: 0; right: 0; height: 820px;
+  --tile: 2730px;
+  position: absolute; top: -56px; left: 0; right: 0;
+  height: 419px;                       /* 2730 * 553/3600 */
   z-index: 0; pointer-events: none; overflow: hidden;
-  opacity: 1;
-  mask-image:
-    linear-gradient(180deg, #000 0%, rgba(0,0,0,.82) 46%, transparent 92%),
-    radial-gradient(ellipse 52% 50% at 50% 34%, transparent 4%, #000 92%);
-  -webkit-mask-image:
-    linear-gradient(180deg, #000 0%, rgba(0,0,0,.78) 40%, transparent 90%),
-    radial-gradient(ellipse 52% 50% at 50% 34%, transparent 4%, #000 92%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.86) 52%, transparent 97%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.86) 52%, transparent 97%);
 }
 
 .cloud {
   position: absolute; top: 0; left: 0;
-  width: 300%; height: 100%;
+  width: calc(var(--tile) * 3); height: 100%;
   background-repeat: repeat-x;
-  background-size: 33.3333% 100%;
+  background-size: var(--tile) 100%;
   animation-name: driftX;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -107,23 +110,24 @@ kbd {
 /* One tile of travel, forever. */
 @keyframes driftX {
   from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(-33.3333%, 0, 0); }
+  to   { transform: translate3d(calc(var(--tile) * -1), 0, 0); }
 }
 
+/* Dim on purpose: this is night cloud, not daylight. */
 .cloud-near {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cfilter id='c' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0015 0.0048' numOctaves='6' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.86 0 0 0 0 0.9 0 0 0 0 0.97 2.3 0 0 0 -1.02'/%3E%3C/filter%3E%3Crect width='1600' height='900' filter='url(%23c)'/%3E%3C/svg%3E");
-  opacity: .95;
-  animation-duration: 95s;
+  background-image: url("../img/cloud-near.webp");
+  opacity: .40;
+  animation-duration: 150s;
 }
 .cloud-mid {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cfilter id='c' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0024 0.0075' numOctaves='5' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.66 0 0 0 0 0.72 0 0 0 0 0.84 1.95 0 0 0 -0.95'/%3E%3C/filter%3E%3Crect width='1600' height='900' filter='url(%23c)'/%3E%3C/svg%3E");
-  opacity: .7;
-  animation-duration: 165s;
+  background-image: url("../img/cloud-mid.webp");
+  opacity: .26;
+  animation-duration: 260s;
 }
 .cloud-far {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cfilter id='c' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0038 0.0110' numOctaves='4' seed='53' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.48 0 0 0 0 0.55 0 0 0 0 0.68 1.55 0 0 0 -0.86'/%3E%3C/filter%3E%3Crect width='1600' height='900' filter='url(%23c)'/%3E%3C/svg%3E");
-  opacity: .5;
-  animation-duration: 260s;
+  background-image: url("../img/cloud-far.webp");
+  opacity: .17;
+  animation-duration: 420s;
 }
 
 /* Fine film grain. Keeps large flat areas of near-black from looking like a

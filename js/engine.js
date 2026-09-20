@@ -550,6 +550,11 @@
   // wrong links and the annotated view reports a false destination.
   function stripNonContent(html) {
     return String(html)
+      // Private-use characters are removed here, not in flattenBody, so that
+      // extractLinks and the renderer measure byte-identical input. Stripping
+      // in only one of them lets an anchor sit on opposite sides of the length
+      // bound in each, which shifts every later placeholder.
+      .replace(/[\uE000-\uF8FF]/g, '')
       .replace(/<!--[\s\S]{0,20000}?-->/g, ' ')
       .replace(/<(script|style|head|title|noscript)\b[^>]{0,2000}>[\s\S]{0,200000}?<\/\1\s*>/gi, ' ');
   }
@@ -644,9 +649,9 @@
   }
 
   function flattenBody(html) {
-    // Strip any private-use characters the message already carried before
-    // inserting our own, so a raw one cannot forge a placeholder either.
-    var out = stripNonContent(String(html).replace(/[\uE000-\uF8FF]/g, ''));
+    // stripNonContent also removes private-use characters, so a raw one the
+    // message carried cannot forge a placeholder.
+    var out = stripNonContent(html);
 
     var i = 0;
     out = out.replace(anchorRegex(), function () {
