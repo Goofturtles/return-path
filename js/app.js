@@ -659,64 +659,73 @@
 
     var skyCur = 0, skyOpCur = 1;
     var EASE = 0.15;      // how hard each frame pulls toward the target
-    var running = true;
+    var rafId = 0;
 
     function lerp(a, b, t) { return a + (b - a) * t; }
 
     function frame() {
       var y = window.scrollY || window.pageYOffset;
       var vh = window.innerHeight;
+      var i;
 
+      // --- read pass: every measurement first ---------------------------
+      // Interleaving a read after a write flushes style and layout for each
+      // element, which is 11 forced reflows per frame while scrolling.
+      for (i = 0; i < items.length; i++) {
+        var r = items[i].node.getBoundingClientRect();
+        items[i].skip = (r.bottom < -300 || r.top > vh + 300);
+        if (items[i].skip) continue;
+        var mid = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
+        items[i].mid = Math.max(-1, Math.min(1, mid));
+      }
+
+      // --- write pass: transforms and opacity only ----------------------
       if (sky) {
-        var skyTarget = y * SKY_LAG;
         var t = Math.min(y / SKY_FADE, 1);
-        var opTarget = 1 - t * t;
-        skyCur = lerp(skyCur, skyTarget, EASE);
-        skyOpCur = lerp(skyOpCur, opTarget, EASE);
-        if (opTarget <= 0.002 && skyOpCur < 0.01) {
+        skyCur = lerp(skyCur, y * SKY_LAG, EASE);
+        skyOpCur = lerp(skyOpCur, 1 - t * t, EASE);
+        if (t >= 1 && skyOpCur < 0.01) {
           sky.style.visibility = 'hidden';
         } else {
           sky.style.visibility = 'visible';
-          // Positive translate: pushed back down as the page rises, so it holds
-          // in frame and lingers. Negative would rush it off the top.
+          // Positive translate: pushed back down as the page rises, so it
+          // holds in frame and lingers. Negative would rush it off the top.
           sky.style.transform = 'translate3d(0,' + skyCur.toFixed(2) + 'px,0)';
           sky.style.opacity = skyOpCur.toFixed(3);
         }
       }
 
-      for (var i = 0; i < items.length; i++) {
+      for (i = 0; i < items.length; i++) {
         var it = items[i];
-        var r = it.node.getBoundingClientRect();
-        if (r.bottom < -300 || r.top > vh + 300) continue;
-
-        // -1 above the fold, 0 centred, +1 below: the element's progress
-        // through the viewport.
-        var mid = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
-        mid = Math.max(-1, Math.min(1, mid));
-
-        it.cur = lerp(it.cur, mid * it.rate * 100, EASE);
+        if (it.skip) continue;
+        it.cur = lerp(it.cur, it.mid * it.rate * 100, EASE);
         var css = 'translate3d(0,' + it.cur.toFixed(2) + 'px,0)';
-
         if (it.tilt) {
           // A little rotation about X as it passes, so the plate reads as a
           // surface in space rather than a flat rectangle sliding by.
-          it.curTilt = lerp(it.curTilt, mid * it.tilt, EASE);
+          it.curTilt = lerp(it.curTilt, it.mid * it.tilt, EASE);
           css += ' perspective(1400px) rotateX(' + it.curTilt.toFixed(2) + 'deg)' +
                  ' scale(' + (1 - Math.abs(it.curTilt) * 0.004).toFixed(4) + ')';
         }
         it.node.style.transform = css;
       }
 
-      if (running) requestAnimationFrame(frame);
+      rafId = requestAnimationFrame(frame);
     }
 
-    // Pause the loop when the tab is hidden; nothing is moving to look at.
+    // Cancel the queued frame, rather than flagging it. Leaving it queued
+    // means the restore below schedules a SECOND loop, and every hide/show
+    // after that doubles the work again.
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) { running = false; }
-      else if (!running) { running = true; requestAnimationFrame(frame); }
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      } else if (!rafId) {
+        rafId = requestAnimationFrame(frame);
+      }
     });
 
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
   })();
 
   // Scroll reveal. Anything already on screen at load stays put rather than

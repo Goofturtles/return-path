@@ -232,115 +232,249 @@
     </div>
   </section>
 
-  <!-- ─────────────────────────────────────────── showcase: the two senders -->
+  <!-- ─────────────────────────────────────────── showcase: two senders -->
   <section class="showcase" id="catches">
     <div class="showcase-copy reveal-l">
-      <p class="kicker">The two senders</p>
-      <h2>Every email has an address you are shown, and one the servers actually used.</h2>
+      <p class="kicker">The part nobody sees</p>
+      <h2>Every email has two return addresses. You only ever see one.</h2>
       <p class="section-lede">
-        Only the second gets checked. When they disagree and nothing ties them
-        together, that gap is the whole attack — and it is invisible in every
-        mail client ever made.
+        There is the name in your inbox, and there is the address the computers
+        actually used to deliver it. Anyone can type anything into the first
+        one. The second is much harder to fake &mdash; and it is the one nobody
+        is shown.
       </p>
-      <ul class="tickList">
-        <li>From vs. Return-Path, side by side</li>
-        <li>DKIM's signing domain, not just its badge</li>
-        <li>Where a reply would really go</li>
-      </ul>
+      <p class="section-lede">
+        Return Path puts them next to each other. When they belong to different
+        companies and nothing connects them, that gap is the whole trick.
+      </p>
     </div>
+
     <figure class="showcase-shot reveal-r" data-par="0.20" data-tilt="9">
-      <img src="img/ui-envelope.webp" width="760" height="430" loading="lazy" decoding="async"
-           alt="The envelope panel: From alerts@paypa1.com marked impersonation, Return-Path on a different domain, DKIM unsigned, and Reply-To pointing elsewhere.">
+      <svg class="art" viewBox="0 0 520 330" role="img"
+           aria-label="An envelope showing PayPal as the visible sender, while the delivery label underneath reads a different, unrelated address.">
+        <defs>
+          <linearGradient id="gEnv" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1a2029"/><stop offset="1" stop-color="#11151c"/>
+          </linearGradient>
+        </defs>
+
+        <text class="a-lab" x="40" y="44">WHAT YOU ARE SHOWN</text>
+        <rect class="a-panel" x="40" y="58" width="440" height="72" rx="10" fill="url(#gEnv)"/>
+        <circle class="a-dot-ok" cx="70" cy="94" r="12"/>
+        <text class="a-big" x="96" y="90">PayPal Service</text>
+        <text class="a-sub" x="96" y="112">Your account will be suspended</text>
+
+        <path class="a-join" d="M260 138 L260 176"/>
+        <text class="a-ask" x="272" y="163">same sender?</text>
+        <text class="a-no" x="212" y="163">✕</text>
+
+        <text class="a-lab" x="40" y="206">WHAT THE COMPUTERS USED</text>
+        <rect class="a-panel a-panel-bad" x="40" y="220" width="440" height="72" rx="10" fill="url(#gEnv)"/>
+        <circle class="a-dot-bad" cx="70" cy="256" r="12"/>
+        <text class="a-mono-bad" x="96" y="252">bounce@mailer-7f2a.top</text>
+        <text class="a-sub" x="96" y="274">not PayPal, and not connected to it</text>
+      </svg>
     </figure>
   </section>
 
-  <!-- ─────────────────────────────────────────── showcase: annotated -->
+  <!-- ─────────────────────────────────────────── showcase: links -->
   <section class="showcase showcase-flip">
     <div class="showcase-copy reveal-r">
-      <p class="kicker">Links, exposed</p>
-      <h2>The text of a link is decoration. Only the href is real.</h2>
+      <p class="kicker">Where links really go</p>
+      <h2>The words in a link are just words. They are not the destination.</h2>
       <p class="section-lede">
-        The message is rebuilt as plain text — its HTML is never rendered — and
-        every link becomes a button. Click one and it tells you where it
-        actually goes, and which trick it is using to hide that.
+        A link can say <em>paypal.com</em> and open something else entirely.
+        That is not a bug, it is how links have always worked &mdash; and on a
+        phone you cannot hover to check.
       </p>
-      <ul class="tickList">
-        <li>Anchor text against the true destination</li>
-        <li><code>@</code>-in-URL misdirection and bare IPs</li>
-        <li>Shorteners, <code>javascript:</code> and <code>data:</code> URLs</li>
-      </ul>
+      <p class="section-lede">
+        So the message is rebuilt as plain text and every link becomes a button.
+        Tap one and it tells you where it actually goes, and what it was doing
+        to hide that.
+      </p>
     </div>
+
     <figure class="showcase-shot reveal-l" data-par="0.20" data-tilt="-9">
-      <img src="img/ui-message.webp" width="760" height="319" loading="lazy" decoding="async"
-           alt="The annotated message: a link reading paypal.com/signin is highlighted red, and an open note shows it opens mailer-7f2a.top instead.">
+      <svg class="art" viewBox="0 0 520 330" role="img"
+           aria-label="A link labelled paypal.com slash signin, with an arrow curving away to a completely different address.">
+        <text class="a-lab" x="40" y="60">THE LINK SAYS</text>
+        <rect class="a-chip" x="40" y="76" width="300" height="52" rx="9"/>
+        <text class="a-link" x="62" y="108">https://www.paypal.com/signin</text>
+
+        <path class="a-arrow" d="M190 140 C190 186, 300 178, 300 220" marker-end="url(#ah)"/>
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="a-arrow-head"/>
+          </marker>
+        </defs>
+
+        <text class="a-lab a-lab-bad" x="40" y="252">IT ACTUALLY OPENS</text>
+        <rect class="a-chip a-chip-bad" x="40" y="266" width="440" height="52" rx="9"/>
+        <text class="a-link-bad" x="62" y="298">paypal.com.verify.mailer-7f2a.top</text>
+      </svg>
     </figure>
   </section>
 
   <!-- ─────────────────────────────────────────── bento -->
   <section class="section">
     <div class="section-head reveal">
-      <p class="kicker">What it catches</p>
-      <h2>Eight ways an email lies about<br>where it came from.</h2>
+      <p class="kicker">What it looks for</p>
+      <h2>Six ways an email lies about<br>who sent it.</h2>
       <p class="section-lede">
-        None of them involve spelling. All of them are visible in the headers,
-        and every one is something real mail almost never does.
+        Not one of them is a spelling mistake. All of them are sitting in the
+        message already, and each is something a genuine email almost never
+        does.
       </p>
     </div>
 
     <div class="bento">
       <article class="bcard reveal" style="--d:0ms" data-par="0.13">
-        <div class="bcard-shot"><img src="img/ui-finding.webp" width="760" height="180" loading="lazy" decoding="async"
-          alt="A finding reading: the display name is itself a fake email address."></div>
-        <h3>A fake address in the name field</h3>
-        <p>Display names are free text and never verified. Put <code>service@paypal.com</code>
-           there and every phone shows it, because mobile clients hide the real address.</p>
+        <div class="bcard-art">
+          <svg class="art" viewBox="0 0 300 150" role="img"
+               aria-label="A phone showing the sender name PayPal Service, with the real address hidden off screen.">
+            <rect class="a-phone" x="96" y="18" width="108" height="118" rx="13"/>
+            <rect class="a-panel" x="106" y="40" width="88" height="46" rx="7"/>
+            <circle class="a-dot-ok" cx="120" cy="56" r="7"/>
+            <text class="a-tiny" x="132" y="59">PayPal Service</text>
+            <text class="a-tiny a-dim" x="112" y="78">Account suspended</text>
+            <text class="a-mono-bad a-xs" x="106" y="112">alerts@paypa1.com</text>
+            <path class="a-strike" d="M104 106 L200 106"/>
+            <text class="a-lab a-lab-bad" x="106" y="130">hidden on phones</text>
+          </svg>
+        </div>
+        <h3>A fake name on the envelope</h3>
+        <p>The sender name is just text &mdash; anyone can type anything there,
+          and nothing checks it. Phones show you that name and hide the real
+          address completely.</p>
       </article>
 
       <article class="bcard reveal" style="--d:70ms" data-par="0.07">
-        <div class="bcard-shot"><img src="img/ui-links.webp" width="760" height="350" loading="lazy" decoding="async"
-          alt="The links table: visible text, real destination, domain, and the trick each link uses."></div>
-        <h3>Links that go somewhere else</h3>
-        <p>Text and destination compared for every link, with the specific
-           misdirection named rather than scored.</p>
+        <div class="bcard-art">
+          <svg class="art" viewBox="0 0 300 150" role="img"
+               aria-label="Two domain names compared: paypal.com and a lookalike spelled with the digit one.">
+            <text class="a-cmp a-cmp-ok" x="150" y="58" text-anchor="middle">paypal.com</text>
+            <text class="a-lab" x="150" y="76" text-anchor="middle">THE REAL ONE</text>
+            <text class="a-cmp a-cmp-bad" x="150" y="116" text-anchor="middle">paypa<tspan class="a-hi">1</tspan>.com</text>
+            <text class="a-lab a-lab-bad" x="150" y="134" text-anchor="middle">A DIGIT, NOT AN L</text>
+          </svg>
+        </div>
+        <h3>A name that isn't quite the name</h3>
+        <p>A one swapped for an l. A letter from another alphabet that looks
+          identical. Reading carefully does not help &mdash; so it is checked
+          character by character instead.</p>
       </article>
 
       <article class="bcard reveal" style="--d:140ms" data-par="0.17">
-        <div class="bcard-shot"><img src="img/ui-route.webp" width="760" height="330" loading="lazy" decoding="async"
-          alt="The route panel: each Received hop in order with timestamps and deltas."></div>
-        <h3>A route that doesn't add up</h3>
-        <p>Every server stamps a <code>Received:</code> line. Read in order they are a
-           timeline — and invented hops report times that run backwards.</p>
+        <div class="bcard-art">
+          <svg class="art" viewBox="0 0 300 150" role="img"
+               aria-label="A delivery timeline of three stops, where the third reports an earlier time than the second.">
+            <path class="a-track" d="M46 75 L254 75"/>
+            <circle class="a-stop" cx="46" cy="75" r="9"/>
+            <circle class="a-stop" cx="150" cy="75" r="9"/>
+            <circle class="a-stop a-stop-bad" cx="254" cy="75" r="9"/>
+            <text class="a-tiny a-dim" x="46" y="52" text-anchor="middle">10:12</text>
+            <text class="a-tiny a-dim" x="150" y="52" text-anchor="middle">10:14</text>
+            <text class="a-tiny a-bad" x="254" y="52" text-anchor="middle">10:09</text>
+            <path class="a-back" d="M238 100 L172 100" marker-end="url(#ah2)"/>
+            <defs>
+              <marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5"
+                      markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" class="a-arrow-head-bad"/>
+              </marker>
+            </defs>
+            <text class="a-lab a-lab-bad" x="150" y="126" text-anchor="middle">TIME RUNS BACKWARDS</text>
+          </svg>
+        </div>
+        <h3>A journey that can't have happened</h3>
+        <p>Every computer that passes the message along stamps the time. Read in
+          order they are a travel history &mdash; and invented stops tend to
+          arrive before they left.</p>
       </article>
 
       <article class="bcard bcard-wide reveal" style="--d:0ms" data-par="0.09">
-        <div class="bcard-shot"><img src="img/ui-bec.webp" width="880" height="430" loading="lazy" decoding="async"
-          alt="The business email compromise verdict: SPF, DKIM and DMARC all pass, and the verdict is still Suspicious."></div>
+        <div class="bcard-art bcard-art-wide">
+          <svg class="art" viewBox="0 0 340 210" role="img"
+               aria-label="Three security checks all passing, and a warning flag raised anyway.">
+            <g class="a-check">
+              <rect class="a-pill a-pill-ok" x="30" y="26" width="128" height="34" rx="17"/>
+              <path class="a-tick" d="M48 43 l7 7 13 -15"/>
+              <text class="a-tiny a-ok" x="78" y="48">Sender checks out</text>
+            </g>
+            <g class="a-check">
+              <rect class="a-pill a-pill-ok" x="30" y="70" width="128" height="34" rx="17"/>
+              <path class="a-tick" d="M48 87 l7 7 13 -15"/>
+              <text class="a-tiny a-ok" x="78" y="92">Signature valid</text>
+            </g>
+            <g class="a-check">
+              <rect class="a-pill a-pill-ok" x="30" y="114" width="128" height="34" rx="17"/>
+              <path class="a-tick" d="M48 131 l7 7 13 -15"/>
+              <text class="a-tiny a-ok" x="78" y="136">Domain agrees</text>
+            </g>
+
+            <path class="a-join" d="M170 87 L204 87"/>
+
+            <rect class="a-panel a-panel-bad" x="214" y="52" width="100" height="70" rx="11"/>
+            <path class="a-bang" d="M264 70 L264 92"/>
+            <circle class="a-bang-dot" cx="264" cy="102" r="3"/>
+            <text class="a-lab a-lab-bad" x="264" y="140" text-anchor="middle">STILL A SCAM</text>
+          </svg>
+        </div>
         <div class="bcard-body">
-          <h3>Every check passes. It is still an attack.</h3>
+          <h3>Sometimes everything checks out and it is still a scam.</h3>
           <p>
-            When somebody sends from a real mailbox they have stolen, the
-            cryptography is genuine — everything is, except the person typing.
-            This is the case that defeats every header tool, so it is one of the
-            built-in specimens rather than a footnote: all three checks green,
-            verdict still <b>Suspicious</b>, caught on a Reply-To divergence and a
-            stack of pressure tactics. It is also why the verdict never says
-            "safe".
+            If someone steals a real person's email account, the message really
+            does come from them. Every automatic check passes, because nothing
+            is fake except the person typing.
+          </p>
+          <p>
+            This is the case that beats every tool like this one, so rather than
+            bury it, it is one of the built-in examples: all three checks green,
+            the verdict still <b>Suspicious</b>, because the reply would go to a
+            stranger and the message leans on urgency and secrecy. It is also
+            why the answer is never the word "safe".
           </p>
         </div>
       </article>
 
       <article class="bcard reveal" style="--d:70ms">
-        <span class="bcard-glyph" aria-hidden="true">xn--pypal-4ve<em>pаypal.com</em></span>
-        <h3>A domain that isn't the domain</h3>
-        <p>Punycode is decoded to what you would actually see. Confusables are
-           folded, so <code>paypa1.com</code> and <code>rnicrosoft.com</code> surface too.</p>
+        <div class="bcard-art">
+          <svg class="art" viewBox="0 0 300 150" role="img"
+               aria-label="A file named Invoice dot p d f, revealed to actually end in dot j s.">
+            <path class="a-file" d="M112 34 h54 l22 22 v60 a6 6 0 0 1 -6 6 h-70 a6 6 0 0 1 -6 -6 v-76 a6 6 0 0 1 6 -6 z"/>
+            <path class="a-file-fold" d="M166 34 v22 h22"/>
+            <text class="a-tiny" x="150" y="112" text-anchor="middle">Invoice.pdf</text>
+            <text class="a-cmp a-cmp-bad a-sm" x="150" y="140" text-anchor="middle">.js</text>
+          </svg>
+        </div>
+        <h3>A file that isn't what it says</h3>
+        <p>Windows hides the real file type, so a program can arrive looking
+          exactly like a PDF. The bit that runs is the bit you were not
+          shown.</p>
       </article>
 
       <article class="bcard reveal" style="--d:140ms">
-        <span class="bcard-glyph bcard-glyph-file" aria-hidden="true">Remittance.pdf<em>.js</em></span>
-        <h3>The filename isn't the file</h3>
-        <p>Windows hides known extensions, so this arrives looking like a PDF.
-           The one that runs is the last one.</p>
+        <div class="bcard-art">
+          <svg class="art" viewBox="0 0 300 150" role="img"
+               aria-label="A reply arrow leaving one company and landing on an unrelated address.">
+            <rect class="a-panel" x="26" y="52" width="112" height="46" rx="9"/>
+            <text class="a-tiny a-dim" x="82" y="80" text-anchor="middle">your school</text>
+            <path class="a-arrow" d="M146 75 L186 75" marker-end="url(#ah3)"/>
+            <defs>
+              <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5"
+                      markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" class="a-arrow-head-bad"/>
+              </marker>
+            </defs>
+            <rect class="a-panel a-panel-bad" x="192" y="52" width="86" height="46" rx="9"/>
+            <text class="a-tiny a-bad" x="235" y="80" text-anchor="middle">a stranger</text>
+            <text class="a-lab a-lab-bad" x="150" y="126" text-anchor="middle">YOUR REPLY GOES HERE</text>
+          </svg>
+        </div>
+        <h3>A reply that goes to someone else</h3>
+        <p>The message looks like it came from your boss. Hit reply and it
+          quietly goes somewhere else. That one swap is behind most invoice and
+          gift-card scams.</p>
       </article>
     </div>
   </section>
@@ -348,50 +482,81 @@
   <!-- ─────────────────────────────────────────── how -->
   <section class="how" id="how">
     <div class="how-head reveal">
-      <p class="how-tag">[ method ]</p>
-      <h2>How Return Path reads an email</h2>
+      <p class="how-tag">[ how it works ]</p>
+      <h2>Three steps, no account, nothing uploaded</h2>
       <p class="how-sub">
-        Roughly thirty deterministic rules over RFC 5322 headers. No model, no
-        score, no guessing &mdash; and every finding cites the header it came from.
+        About thirty fixed rules, run on your own machine. No artificial
+        intelligence, no score out of ten, no guessing &mdash; and every answer
+        shows you the line it came from.
       </p>
     </div>
 
-    <div class="how-rule reveal" aria-hidden="true"><span>how it works</span></div>
+    <div class="how-rule reveal" aria-hidden="true"><span>start to finish</span></div>
 
     <ol class="how-steps">
       <li class="how-step reveal" style="--d:0ms" data-par="0.11">
-        <div class="how-shot">
-          <img src="img/ui-paste.webp" width="700" height="179" loading="lazy" decoding="async"
-               alt="The paste box holding the raw source of an email.">
+        <div class="how-art">
+          <svg class="art" viewBox="0 0 300 160" role="img"
+               aria-label="A menu with Show original highlighted, above a box of pasted text.">
+            <rect class="a-panel" x="40" y="24" width="150" height="58" rx="9"/>
+            <text class="a-tiny a-dim" x="56" y="46">Reply</text>
+            <rect class="a-hl" x="48" y="54" width="134" height="20" rx="5"/>
+            <text class="a-tiny a-acc" x="56" y="69">Show original</text>
+            <path class="a-arrow" d="M120 90 L120 110" marker-end="url(#ah4)"/>
+            <defs>
+              <marker id="ah4" viewBox="0 0 10 10" refX="8" refY="5"
+                      markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" class="a-arrow-head"/>
+              </marker>
+            </defs>
+            <rect class="a-panel" x="40" y="116" width="220" height="30" rx="7"/>
+            <path class="a-line" d="M54 126 h100 M54 136 h160"/>
+          </svg>
         </div>
         <p class="how-n">step 01</p>
-        <h3>You paste the real source</h3>
-        <p>Gmail calls it <b>Show original</b>, Outlook <b>View message source</b>.
-           That is the message as the servers saw it, headers and all. Or drop
-           a <code>.eml</code> straight onto the box.</p>
+        <h3>Copy the email's hidden details</h3>
+        <p>In Gmail it is called <b>Show original</b>; in Outlook, <b>View
+          message source</b>. It looks like gibberish. That is fine &mdash;
+          paste the whole lot in.</p>
       </li>
 
       <li class="how-step reveal" style="--d:90ms" data-par="0.16">
-        <div class="how-shot">
-          <img src="img/ui-verdict.webp" width="700" height="360" loading="lazy" decoding="async"
-               alt="The verdict card reading Forged, with five critical findings and what to do about it.">
+        <div class="how-art">
+          <svg class="art" viewBox="0 0 300 160" role="img"
+               aria-label="A magnifying glass over an envelope, with a lock showing nothing is sent away.">
+            <rect class="a-panel" x="56" y="44" width="150" height="82" rx="10"/>
+            <path class="a-line" d="M56 50 L131 96 L206 50"/>
+            <circle class="a-glass" cx="196" cy="98" r="30"/>
+            <path class="a-glass-stem" d="M218 120 L240 142"/>
+            <text class="a-lab" x="150" y="150" text-anchor="middle">CHECKED ON YOUR DEVICE</text>
+          </svg>
         </div>
         <p class="how-n">step 02</p>
-        <h3>It reads the envelope, not the letter</h3>
-        <p>Authentication, alignment, impersonation, lookalike domains, links,
-           attachments and the route &mdash; in about a millisecond, in this tab,
-           with nothing sent anywhere.</p>
+        <h3>It reads what the computers wrote</h3>
+        <p>Who really sent it, where its links go, what is attached and the
+          route it travelled. It takes about a thousandth of a second, and
+          nothing leaves your browser.</p>
       </li>
 
       <li class="how-step reveal" style="--d:180ms" data-par="0.21">
-        <div class="how-shot">
-          <img src="img/ui-finding.webp" width="760" height="180" loading="lazy" decoding="async"
-               alt="A finding opened to reveal the exact header it was derived from.">
+        <div class="how-art">
+          <svg class="art" viewBox="0 0 300 160" role="img"
+               aria-label="A verdict card with a finding opened to reveal the exact line it came from.">
+            <rect class="a-panel a-panel-bad" x="38" y="28" width="224" height="40" rx="9"/>
+            <circle class="a-dot-bad" cx="60" cy="48" r="9"/>
+            <text class="a-cmp a-cmp-bad a-sm" x="78" y="54">Forged</text>
+            <rect class="a-panel" x="38" y="78" width="224" height="26" rx="7"/>
+            <path class="a-line" d="M52 91 h120"/>
+            <text class="a-lab a-lab-acc" x="238" y="95" text-anchor="end">WHY?</text>
+            <rect class="a-hl" x="52" y="112" width="196" height="26" rx="6"/>
+            <path class="a-line a-line-acc" d="M64 121 h150 M64 131 h96"/>
+          </svg>
         </div>
         <p class="how-n">step 03</p>
-        <h3>You get evidence, not a score</h3>
-        <p>Open any finding and it shows the header underneath it. That is the
-           difference between a tool you have to trust and one you can check.</p>
+        <h3>You get a reason, not a score</h3>
+        <p>Open any point and it shows you the exact line in the email that
+          proves it. That is the difference between trusting a tool and being
+          able to check it.</p>
       </li>
     </ol>
   </section>

@@ -233,7 +233,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
-  .rise, .reveal { opacity: 1 !important; transform: none !important; }
+  .rise, .reveal, .reveal-l, .reveal-r { opacity: 1 !important; transform: none !important; }
 }
 
 /* ══════════════════════════════════════════════ topbar */
@@ -930,6 +930,88 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 .how-step p { color: var(--ink-3); font-size: .88rem; line-height: 1.68; margin: 0; }
 .how-step b { color: var(--ink-2); font-weight: 500; }
 
+/* vector art ------------------------------------------------------------
+   All the illustrations are inline SVG rather than screenshots: sharp at any
+   size and on any display, a few hundred bytes each, and they recolour with
+   the theme because everything below is driven by CSS rather than baked in. */
+
+.art { display: block; width: 100%; height: 100%; }
+
+.a-panel { fill: var(--panel-2); stroke: var(--line); stroke-width: 1; }
+.a-panel-bad { fill: rgba(255,107,107,.05); stroke: rgba(255,107,107,.42); }
+.a-phone { fill: var(--raise); stroke: var(--line); stroke-width: 1.5; }
+.a-chip { fill: var(--panel-2); stroke: rgba(122,162,255,.38); stroke-width: 1; }
+.a-chip-bad { stroke: rgba(255,107,107,.45); fill: rgba(255,107,107,.05); }
+.a-pill { fill: rgba(69,212,137,.07); stroke: rgba(69,212,137,.32); stroke-width: 1; }
+.a-file { fill: var(--panel-2); stroke: var(--line); stroke-width: 1.5; }
+.a-file-fold { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.a-hl { fill: rgba(95,216,203,.10); stroke: var(--accent-dim); stroke-width: 1; }
+
+.a-dot-ok  { fill: var(--accent); }
+.a-dot-bad { fill: var(--critical); }
+.a-stop    { fill: var(--panel-2); stroke: var(--ink-4); stroke-width: 2; }
+.a-stop-bad{ stroke: var(--critical); }
+
+.a-line { fill: none; stroke: var(--line); stroke-width: 2; stroke-linecap: round; }
+.a-line-acc { stroke: var(--accent-dim); }
+.a-track { stroke: var(--line); stroke-width: 2; }
+.a-join { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 5; fill: none; }
+.a-strike { stroke: var(--critical); stroke-width: 1.5; opacity: .5; }
+.a-arrow { fill: none; stroke: var(--ink-4); stroke-width: 1.8; }
+.a-arrow-head { fill: var(--ink-4); }
+.a-arrow-head-bad { fill: var(--critical); }
+.a-back { fill: none; stroke: var(--critical); stroke-width: 1.6; opacity: .8; }
+.a-tick { fill: none; stroke: var(--good); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.a-bang { stroke: var(--critical); stroke-width: 3.4; stroke-linecap: round; }
+.a-bang-dot { fill: var(--critical); }
+.a-glass { fill: rgba(95,216,203,.05); stroke: var(--accent); stroke-width: 2; }
+.a-glass-stem { stroke: var(--accent); stroke-width: 3.4; stroke-linecap: round; }
+
+.a-lab {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .13em;
+  fill: var(--ink-4);
+}
+.a-lab-bad { fill: var(--critical); opacity: .85; }
+.a-lab-acc { fill: var(--accent); }
+.a-big  { font-family: var(--sans); font-size: 16px; font-weight: 500; fill: var(--ink); }
+.a-sub  { font-family: var(--sans); font-size: 11px; fill: var(--ink-4); }
+.a-tiny { font-family: var(--sans); font-size: 10px; fill: var(--ink-2); }
+.a-xs   { font-size: 9px; }
+.a-dim  { fill: var(--ink-4); }
+.a-ok   { fill: var(--good); }
+.a-bad  { fill: var(--critical); }
+.a-acc  { fill: var(--accent); }
+.a-ask  { font-family: var(--mono); font-size: 10px; fill: var(--ink-4); }
+.a-no   { font-family: var(--sans); font-size: 15px; fill: var(--critical); }
+.a-mono-bad { font-family: var(--mono); font-size: 13px; fill: var(--critical); }
+.a-link { font-family: var(--mono); font-size: 13px; fill: #a9c2ff; }
+.a-link-bad { font-family: var(--mono); font-size: 13px; fill: #ffb0b0; }
+.a-cmp  { font-family: var(--mono); font-size: 20px; }
+.a-cmp-ok { fill: var(--ink-2); }
+.a-cmp-bad { fill: var(--critical); }
+.a-cmp .a-hi { fill: #fff; paint-order: stroke; }
+.a-sm { font-size: 16px; }
+
+/* frames that hold the art */
+.bcard-art {
+  height: 178px; margin-bottom: 18px; padding: 14px 18px 0;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.018), transparent);
+}
+.bcard-art-wide { height: 100%; border-bottom: 0; border-right: 1px solid var(--line);
+  display: flex; align-items: center; padding: 26px; }
+.how-art {
+  height: 190px; margin-bottom: 18px; padding: 16px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg-2); position: relative;
+}
+.how-art::before, .how-art::after {
+  content: ""; position: absolute; width: 9px; height: 9px; pointer-events: none;
+  border: 1px solid var(--accent-dim);
+}
+.how-art::before { left: 7px; top: 7px; border-right: 0; border-bottom: 0; }
+.how-art::after { right: 7px; bottom: 7px; border-left: 0; border-top: 0; }
+
 /* privacy */
 
 .privacy-card {
@@ -1048,6 +1130,10 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   transition: border-color .35s var(--ease), background .35s var(--ease), transform .35s var(--ease);
 }
 .bcard:hover { border-color: #2c3543; background: var(--panel); transform: translateY(-3px); }
+/* The rAF loop owns transform on these, so transitioning it would restart a
+   transition every frame and the hover lift would never render. */
+.bcard[data-par] { transition-property: border-color, background; }
+.bcard[data-par]:hover { transform: none; }
 
 .bcard-shot {
   height: 178px; overflow: hidden; margin-bottom: 18px;
@@ -1169,7 +1255,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   .showcase-flip .showcase-shot { order: 2; }
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bcard-wide { grid-column: span 2; grid-template-columns: 1fr; }
-  .bcard-wide .bcard-shot { border-right: 0; border-bottom: 1px solid var(--line); height: 200px; }
+  .bcard-wide .bcard-art-wide { border-right: 0; border-bottom: 1px solid var(--line); height: 200px; }
 }
 
 @media (max-width: 1080px) {
@@ -1204,10 +1290,10 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 @media (max-width: 680px) {
   .showcase { padding: 44px 16px; }
   .how { padding: 48px 16px; }
-  .how-shot { height: 170px; }
+  .how-art { height: 170px; }
   .bento { grid-template-columns: 1fr; gap: 12px; }
   .bcard-wide { grid-column: span 1; }
-  .bcard-shot, .bcard-glyph { height: 150px; }
+  .bcard-art { height: 150px; }
   .ticker-run { font-size: .74rem; gap: 16px; }
   .limits-photo { margin-bottom: 30px; }
 
