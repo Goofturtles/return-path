@@ -13,5 +13,5 @@ requests after load — a third-party image would break that.
 ## Everything else
 
 The sky (`img/cloud-*.webp`) is rendered from `tools/render_clouds.py` in
-Blender. All the illustrations are inline SVG, drawn for this page. Typefaces are Instrument Serif and IBM Plex Sans/Mono, both SIL
-Open Font License, self-hosted in `fonts/`.
+Blender. All the illustrations are inline SVG, drawn for this page. Typefaces are Archivo and DM Mono, both SIL Open Font License,
+self-hosted in `fonts/`.

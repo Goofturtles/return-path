@@ -232,88 +232,105 @@
     </div>
   </section>
 
-  <!-- ─────────────────────────────────────────── showcase: two senders -->
-  <section class="showcase" id="catches">
-    <div class="showcase-copy reveal-l">
-      <p class="kicker">The part nobody sees</p>
-      <h2>Every email has two return addresses. You only ever see one.</h2>
-      <p class="section-lede">
-        There is the name in your inbox, and there is the address the computers
-        actually used to deliver it. Anyone can type anything into the first
-        one. The second is much harder to fake &mdash; and it is the one nobody
-        is shown.
-      </p>
-      <p class="section-lede">
-        Return Path puts them next to each other. When they belong to different
-        companies and nothing connects them, that gap is the whole trick.
-      </p>
+  <!-- ─────────────────────────────────────────── blueprint -->
+  <section class="spec" id="catches">
+    <div class="spec-head reveal">
+      <p class="kicker">Anatomy of a message</p>
+      <h2>Everything an email is really carrying.</h2>
     </div>
 
-    <figure class="showcase-shot reveal-r" data-par="0.20" data-tilt="9">
-      <svg class="art" viewBox="0 0 520 330" role="img"
-           aria-label="An envelope showing PayPal as the visible sender, while the delivery label underneath reads a different, unrelated address.">
-        <defs>
-          <linearGradient id="gEnv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#1a2029"/><stop offset="1" stop-color="#11151c"/>
-          </linearGradient>
-        </defs>
+    <div class="spec-body">
+      <div class="blueprint reveal-l">
+        <svg viewBox="0 0 700 430" role="img"
+             aria-label="A technical drawing of an email, labelled with the parts Return Path inspects: the visible sender, the delivery address underneath, the links in the body, and the attachments.">
+          <defs>
+            <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+              <path d="M28 0 H0 V28" class="bp-grid"/>
+            </pattern>
+            <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--accent)" stop-opacity="0"/>
+              <stop offset="0.5" stop-color="var(--accent)" stop-opacity=".30"/>
+              <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
 
-        <text class="a-lab" x="40" y="44">WHAT YOU ARE SHOWN</text>
-        <rect class="a-panel" x="40" y="58" width="440" height="72" rx="10" fill="url(#gEnv)"/>
-        <circle class="a-dot-ok" cx="70" cy="94" r="12"/>
-        <text class="a-big" x="96" y="90">PayPal Service</text>
-        <text class="a-sub" x="96" y="112">Your account will be suspended</text>
+          <rect width="700" height="430" fill="url(#grid)"/>
 
-        <path class="a-join" d="M260 138 L260 176"/>
-        <text class="a-ask" x="272" y="163">same sender?</text>
-        <text class="a-no" x="212" y="163">✕</text>
+          <g class="bp-object">
+            <rect class="bp-line" x="200" y="112" width="300" height="196" rx="6"/>
+            <path class="bp-line" d="M200 119 L350 226 L500 119"/>
+            <path class="bp-line bp-faint" d="M200 308 L322 210 M500 308 L378 210"/>
+          </g>
 
-        <text class="a-lab" x="40" y="206">WHAT THE COMPUTERS USED</text>
-        <rect class="a-panel a-panel-bad" x="40" y="220" width="440" height="72" rx="10" fill="url(#gEnv)"/>
-        <circle class="a-dot-bad" cx="70" cy="256" r="12"/>
-        <text class="a-mono-bad" x="96" y="252">bounce@mailer-7f2a.top</text>
-        <text class="a-sub" x="96" y="274">not PayPal, and not connected to it</text>
-      </svg>
-    </figure>
-  </section>
+          <g class="bp-dim">
+            <path d="M200 96 L500 96"/>
+            <path d="M200 90 L200 102 M500 90 L500 102"/>
+            <text x="350" y="86" text-anchor="middle">the part you are shown</text>
+          </g>
 
-  <!-- ─────────────────────────────────────────── showcase: links -->
-  <section class="showcase showcase-flip">
-    <div class="showcase-copy reveal-r">
-      <p class="kicker">Where links really go</p>
-      <h2>The words in a link are just words. They are not the destination.</h2>
-      <p class="section-lede">
-        A link can say <em>paypal.com</em> and open something else entirely.
-        That is not a bug, it is how links have always worked &mdash; and on a
-        phone you cannot hover to check.
-      </p>
-      <p class="section-lede">
-        So the message is rebuilt as plain text and every link becomes a button.
-        Tap one and it tells you where it actually goes, and what it was doing
-        to hide that.
-      </p>
+          <g data-plate="0" class="bp-plate">
+            <circle class="bp-node" cx="244" cy="152" r="7"/>
+            <path class="bp-lead" d="M244 152 L150 152"/>
+            <text class="bp-tag" x="146" y="148" text-anchor="end">FROM</text>
+            <text class="bp-val" x="146" y="164" text-anchor="end">PayPal Service</text>
+          </g>
+          <g data-plate="1" class="bp-plate">
+            <circle class="bp-node" cx="456" cy="278" r="7"/>
+            <path class="bp-lead" d="M456 278 L548 278"/>
+            <text class="bp-tag" x="552" y="274">RETURN-PATH</text>
+            <text class="bp-val bp-val-bad" x="552" y="290">mailer-7f2a.top</text>
+          </g>
+          <g data-plate="2" class="bp-plate">
+            <circle class="bp-node" cx="350" cy="226" r="7"/>
+            <path class="bp-lead" d="M350 226 L350 348 L262 348"/>
+            <text class="bp-tag" x="258" y="344" text-anchor="end">LINKS</text>
+            <text class="bp-val bp-val-bad" x="258" y="360" text-anchor="end">3 — one hides its target</text>
+          </g>
+          <g data-plate="3" class="bp-plate">
+            <circle class="bp-node" cx="252" cy="278" r="7"/>
+            <path class="bp-lead" d="M252 278 L252 388 L360 388"/>
+            <text class="bp-tag" x="364" y="384">ATTACHED</text>
+            <text class="bp-val bp-val-bad" x="364" y="400">Invoice.pdf.js</text>
+          </g>
+
+          <rect class="bp-scan" x="0" y="-70" width="700" height="70" fill="url(#scan)"/>
+        </svg>
+      </div>
+
+      <ol class="spec-list reveal-r">
+        <li class="spec-row" tabindex="0">
+          <span class="spec-n">01</span>
+          <div>
+            <h3>Who it says it is from</h3>
+            <p>A name anyone can type. Nothing anywhere checks it.</p>
+          </div>
+        </li>
+        <li class="spec-row" tabindex="0">
+          <span class="spec-n">02</span>
+          <div>
+            <h3>Who actually sent it</h3>
+            <p>The address the computers used. Usually a completely different
+               company, and never shown to you.</p>
+          </div>
+        </li>
+        <li class="spec-row" tabindex="0">
+          <span class="spec-n">03</span>
+          <div>
+            <h3>Where the links really go</h3>
+            <p>The words in a link are just words. Every one is opened up and
+               compared against its true destination.</p>
+          </div>
+        </li>
+        <li class="spec-row" tabindex="0">
+          <span class="spec-n">04</span>
+          <div>
+            <h3>What came attached</h3>
+            <p>Windows hides the real file type, so a program can arrive
+               looking exactly like a PDF.</p>
+          </div>
+        </li>
+      </ol>
     </div>
-
-    <figure class="showcase-shot reveal-l" data-par="0.20" data-tilt="-9">
-      <svg class="art" viewBox="0 0 520 330" role="img"
-           aria-label="A link labelled paypal.com slash signin, with an arrow curving away to a completely different address.">
-        <text class="a-lab" x="40" y="60">THE LINK SAYS</text>
-        <rect class="a-chip" x="40" y="76" width="300" height="52" rx="9"/>
-        <text class="a-link" x="62" y="108">https://www.paypal.com/signin</text>
-
-        <path class="a-arrow" d="M190 140 C190 186, 300 178, 300 220" marker-end="url(#ah)"/>
-        <defs>
-          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0 0 L10 5 L0 10 z" class="a-arrow-head"/>
-          </marker>
-        </defs>
-
-        <text class="a-lab a-lab-bad" x="40" y="252">IT ACTUALLY OPENS</text>
-        <rect class="a-chip a-chip-bad" x="40" y="266" width="440" height="52" rx="9"/>
-        <text class="a-link-bad" x="62" y="298">paypal.com.verify.mailer-7f2a.top</text>
-      </svg>
-    </figure>
   </section>
 
   <!-- ─────────────────────────────────────────── bento -->
@@ -329,7 +346,7 @@
     </div>
 
     <div class="bento">
-      <article class="bcard reveal" style="--d:0ms" data-par="0.13">
+      <article class="bcard reveal" style="--d:0ms">
         <div class="bcard-art">
           <svg class="art" viewBox="0 0 300 150" role="img"
                aria-label="A phone showing the sender name PayPal Service, with the real address hidden off screen.">
@@ -349,7 +366,7 @@
           address completely.</p>
       </article>
 
-      <article class="bcard reveal" style="--d:70ms" data-par="0.07">
+      <article class="bcard reveal" style="--d:70ms">
         <div class="bcard-art">
           <svg class="art" viewBox="0 0 300 150" role="img"
                aria-label="Two domain names compared: paypal.com and a lookalike spelled with the digit one.">
@@ -365,7 +382,7 @@
           character by character instead.</p>
       </article>
 
-      <article class="bcard reveal" style="--d:140ms" data-par="0.17">
+      <article class="bcard reveal" style="--d:140ms">
         <div class="bcard-art">
           <svg class="art" viewBox="0 0 300 150" role="img"
                aria-label="A delivery timeline of three stops, where the third reports an earlier time than the second.">
@@ -392,7 +409,7 @@
           arrive before they left.</p>
       </article>
 
-      <article class="bcard bcard-wide reveal" style="--d:0ms" data-par="0.09">
+      <article class="bcard bcard-wide reveal" style="--d:0ms">
         <div class="bcard-art bcard-art-wide">
           <svg class="art" viewBox="0 0 340 210" role="img"
                aria-label="Three security checks all passing, and a warning flag raised anyway.">
@@ -494,7 +511,7 @@
     <div class="how-rule reveal" aria-hidden="true"><span>start to finish</span></div>
 
     <ol class="how-steps">
-      <li class="how-step reveal" style="--d:0ms" data-par="0.11">
+      <li class="how-step reveal" style="--d:0ms">
         <div class="how-art">
           <svg class="art" viewBox="0 0 300 160" role="img"
                aria-label="A menu with Show original highlighted, above a box of pasted text.">
@@ -520,7 +537,7 @@
           paste the whole lot in.</p>
       </li>
 
-      <li class="how-step reveal" style="--d:90ms" data-par="0.16">
+      <li class="how-step reveal" style="--d:90ms">
         <div class="how-art">
           <svg class="art" viewBox="0 0 300 160" role="img"
                aria-label="A magnifying glass over an envelope, with a lock showing nothing is sent away.">
@@ -538,7 +555,7 @@
           nothing leaves your browser.</p>
       </li>
 
-      <li class="how-step reveal" style="--d:180ms" data-par="0.21">
+      <li class="how-step reveal" style="--d:180ms">
         <div class="how-art">
           <svg class="art" viewBox="0 0 300 160" role="img"
                aria-label="A verdict card with a finding opened to reveal the exact line it came from.">
@@ -564,7 +581,7 @@
   <!-- ─────────────────────────────────────────── privacy -->
   <section class="section" id="privacy">
     <div class="privacy-card reveal">
-      <img class="privacy-photo" data-par="0.30" src="img/photo-machinery.webp" width="1280" height="720"
+      <img class="privacy-photo" src="img/photo-machinery.webp" width="1280" height="720"
            loading="lazy" decoding="async" aria-hidden="true" alt="">
       <div class="privacy-glow" aria-hidden="true"></div>
       <p class="kicker">Privacy</p>
@@ -598,7 +615,6 @@
     <figure class="limits-photo reveal">
       <span class="photo-frame">
         <img src="img/photo-night.webp" width="1280" height="720" loading="lazy" decoding="async"
-             data-par="0.28"
              alt="A phone screen lighting a face in a dark room.">
       </span>
       <figcaption>The moment this is for: a message you cannot place, at an hour when nobody is around to ask.</figcaption>

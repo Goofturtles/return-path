@@ -633,99 +633,66 @@
 
   Array.prototype.forEach.call(document.querySelectorAll('[data-disclosure]'), initDisclosure);
 
-  // Parallax and scroll-driven depth.
-  //
-  // Every value is LERPED toward its target each frame rather than snapped to
-  // the scroll position. That is what makes it feel smooth and weighted: the
-  // page stops, the motion keeps settling for a few frames. Native scrolling is
-  // left completely alone - hijacking the wheel would break the report's own
-  // scroll-into-view, keyboard paging and the scrollbar.
+  // The sky simply fades as you leave the hero. No parallax: a background
+  // that moves at its own speed fights the content instead of framing it.
   (function () {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
     var sky = document.querySelector('.sky');
-    var SKY_FADE = 980;
-    var SKY_LAG = 0.80;   // keeps 80% of the page's movement, so it really hangs
+    if (!sky || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var ticking = false;
+    function apply() {
+      ticking = false;
+      var t = Math.min((window.scrollY || window.pageYOffset) / 520, 1);
+      sky.style.opacity = String(1 - t * t);
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(apply); }
+    }, { passive: true });
+    apply();
+  })();
 
-    var items = [];
-    Array.prototype.forEach.call(document.querySelectorAll('[data-par]'), function (n) {
-      items.push({
-        node: n,
-        rate: parseFloat(n.getAttribute('data-par')) || 0.2,
-        tilt: parseFloat(n.getAttribute('data-tilt')) || 0,
-        cur: 0, curTilt: 0
+  // The blueprint panel advances on its own, so there is always something
+  // moving for somebody who has stopped scrolling. Hovering a row takes over,
+  // and it pauses entirely while the tab is hidden.
+  (function () {
+    var rows = document.querySelectorAll('.spec-row');
+    var plates = document.querySelectorAll('.blueprint [data-plate]');
+    if (!rows.length) return;
+
+    var i = 0;
+    var timer = null;
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function show(n) {
+      i = n % rows.length;
+      Array.prototype.forEach.call(rows, function (r, k) {
+        r.classList.toggle('is-on', k === i);
       });
-    });
-
-    var skyCur = 0, skyOpCur = 1;
-    var EASE = 0.15;      // how hard each frame pulls toward the target
-    var rafId = 0;
-
-    function lerp(a, b, t) { return a + (b - a) * t; }
-
-    function frame() {
-      var y = window.scrollY || window.pageYOffset;
-      var vh = window.innerHeight;
-      var i;
-
-      // --- read pass: every measurement first ---------------------------
-      // Interleaving a read after a write flushes style and layout for each
-      // element, which is 11 forced reflows per frame while scrolling.
-      for (i = 0; i < items.length; i++) {
-        var r = items[i].node.getBoundingClientRect();
-        items[i].skip = (r.bottom < -300 || r.top > vh + 300);
-        if (items[i].skip) continue;
-        var mid = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
-        items[i].mid = Math.max(-1, Math.min(1, mid));
-      }
-
-      // --- write pass: transforms and opacity only ----------------------
-      if (sky) {
-        var t = Math.min(y / SKY_FADE, 1);
-        skyCur = lerp(skyCur, y * SKY_LAG, EASE);
-        skyOpCur = lerp(skyOpCur, 1 - t * t, EASE);
-        if (t >= 1 && skyOpCur < 0.01) {
-          sky.style.visibility = 'hidden';
-        } else {
-          sky.style.visibility = 'visible';
-          // Positive translate: pushed back down as the page rises, so it
-          // holds in frame and lingers. Negative would rush it off the top.
-          sky.style.transform = 'translate3d(0,' + skyCur.toFixed(2) + 'px,0)';
-          sky.style.opacity = skyOpCur.toFixed(3);
-        }
-      }
-
-      for (i = 0; i < items.length; i++) {
-        var it = items[i];
-        if (it.skip) continue;
-        it.cur = lerp(it.cur, it.mid * it.rate * 100, EASE);
-        var css = 'translate3d(0,' + it.cur.toFixed(2) + 'px,0)';
-        if (it.tilt) {
-          // A little rotation about X as it passes, so the plate reads as a
-          // surface in space rather than a flat rectangle sliding by.
-          it.curTilt = lerp(it.curTilt, it.mid * it.tilt, EASE);
-          css += ' perspective(1400px) rotateX(' + it.curTilt.toFixed(2) + 'deg)' +
-                 ' scale(' + (1 - Math.abs(it.curTilt) * 0.004).toFixed(4) + ')';
-        }
-        it.node.style.transform = css;
-      }
-
-      rafId = requestAnimationFrame(frame);
+      Array.prototype.forEach.call(plates, function (pl) {
+        pl.classList.toggle('is-on', pl.getAttribute('data-plate') === String(i));
+      });
     }
 
-    // Cancel the queued frame, rather than flagging it. Leaving it queued
-    // means the restore below schedules a SECOND loop, and every hide/show
-    // after that doubles the work again.
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      } else if (!rafId) {
-        rafId = requestAnimationFrame(frame);
-      }
+    function play() {
+      if (calm || document.hidden) return;
+      stop();
+      timer = setInterval(function () { show(i + 1); }, 3600);
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+    Array.prototype.forEach.call(rows, function (r, k) {
+      r.addEventListener('mouseenter', function () { stop(); show(k); });
+      r.addEventListener('focus', function () { stop(); show(k); });
+      r.addEventListener('mouseleave', play);
+      r.addEventListener('blur', play);
+      r.addEventListener('click', function () { stop(); show(k); play(); });
     });
 
-    rafId = requestAnimationFrame(frame);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stop(); else play();
+    });
+
+    show(0);
+    play();
   })();
 
   // Scroll reveal. Anything already on screen at load stays put rather than

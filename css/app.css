@@ -27,9 +27,10 @@
   --info:      #8d97a8;
   --good:      #45d489;
 
-  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Display is the same family, just tighter and heavier. One voice. */
+  --serif: var(--sans);
 
   --maxw: 1160px;
   --ease: cubic-bezier(.22, .68, .28, 1);
@@ -286,17 +287,17 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 }
 
 .hero h1 {
-  font-family: var(--serif);
-  font-size: clamp(2rem, 4.3vw, 3.1rem);
-  font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 1.14;
+  font-family: var(--sans);
+  font-size: clamp(1.95rem, 4.1vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  line-height: 1.1;
   margin: 0 auto 42px;
   max-width: 23ch;
   color: #f2f5fa;
   padding-bottom: .06em;
 }
-.hero h1 em { font-style: italic; color: var(--accent-2); }
+.hero h1 em { font-style: normal; color: var(--accent-2); }
 
 .composer { max-width: 740px; margin: 0 auto; }
 
@@ -561,7 +562,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 .verdict-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
 .verdict-label {
-  font-family: var(--serif); font-weight: 400;
+  font-family: var(--sans); font-weight: 600;
   font-size: clamp(2rem, 4vw, 2.9rem);
   letter-spacing: -0.005em; line-height: 1.12; color: var(--info);
   padding-bottom: .04em;
@@ -817,9 +818,9 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   text-transform: uppercase; color: var(--accent); margin-bottom: 18px; line-height: 1.8;
 }
 .section h2 {
-  font-family: var(--serif); font-weight: 400;
+  font-family: var(--sans); font-weight: 600;
   font-size: clamp(1.9rem, 4vw, 3rem);
-  line-height: 1.1; letter-spacing: -0.008em;
+  line-height: 1.1; letter-spacing: -0.028em;
   color: #f4f7fb; margin: 0 0 18px; padding-bottom: .04em;
 }
 .section-lede { color: var(--ink-2); font-size: 1rem; line-height: 1.7; max-width: 52ch; margin: 0; }
@@ -876,9 +877,9 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   text-transform: uppercase; color: var(--accent); margin-bottom: 14px; line-height: 1.8;
 }
 .how h2 {
-  font-family: var(--serif); font-weight: 400;
+  font-family: var(--sans); font-weight: 600;
   font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.1;
-  letter-spacing: -0.008em; color: #f2f5fa; margin: 0 0 16px; padding-bottom: .04em;
+  letter-spacing: -0.028em; color: #f2f5fa; margin: 0 0 16px; padding-bottom: .04em;
 }
 .how-sub { color: var(--ink-2); font-size: 1rem; line-height: 1.7; max-width: 58ch; margin: 0; }
 
@@ -1038,7 +1039,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   padding: 26px 0;
 }
 .privacy-stats b {
-  display: block; font-family: var(--serif); font-weight: 400;
+  display: block; font-family: var(--sans); font-weight: 600;
   font-size: 2.9rem; line-height: 1; color: var(--accent); margin-bottom: 8px;
 }
 .privacy-stats span { color: var(--ink-3); font-size: .85rem; line-height: 1.6; }
@@ -1079,9 +1080,9 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 .showcase-flip .showcase-shot { order: 1; }
 
 .showcase-copy h2 {
-  font-family: var(--serif); font-weight: 400;
+  font-family: var(--sans); font-weight: 600;
   font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.12;
-  letter-spacing: -0.008em; color: #f2f5fa; margin: 0 0 18px; padding-bottom: .04em;
+  letter-spacing: -0.028em; color: #f2f5fa; margin: 0 0 18px; padding-bottom: .04em;
 }
 
 .tickList { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 11px; }
@@ -1115,6 +1116,76 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   filter: blur(30px); pointer-events: none; z-index: -1;
 }
 .showcase-shot:hover img { transform: translateY(-5px); }
+
+/* blueprint --------------------------------------------------------------
+   Garden's register: a technical drawing with measurement callouts, a scan
+   line that never stops, and a list that advances itself so the panel is
+   still doing something when the reader has stopped. */
+
+.spec { max-width: var(--maxw); margin: 0 auto; padding: 84px 28px; }
+.spec-head { margin-bottom: 40px; max-width: 46rem; }
+.spec-body {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: 20px 46px; align-items: center;
+}
+
+.blueprint {
+  border: 1px solid var(--line); border-radius: 15px;
+  background: var(--bg-2); overflow: hidden; position: relative;
+}
+.blueprint svg { display: block; width: 100%; height: auto; }
+
+.bp-grid { fill: none; stroke: var(--line-soft); stroke-width: 1; }
+.bp-line { fill: none; stroke: var(--ink-4); stroke-width: 1.4; }
+.bp-faint { stroke: var(--line); }
+.bp-object { opacity: .9; }
+
+.bp-dim path { fill: none; stroke: var(--accent-dim); stroke-width: 1; }
+.bp-dim text {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  fill: var(--ink-4);
+}
+
+/* each callout waits its turn */
+.bp-plate { opacity: .22; transition: opacity .55s var(--ease); }
+.bp-plate.is-on { opacity: 1; }
+.bp-node { fill: var(--bg-2); stroke: var(--accent); stroke-width: 2; }
+.bp-plate.is-on .bp-node { fill: var(--accent); }
+.bp-lead { fill: none; stroke: var(--accent-dim); stroke-width: 1; stroke-dasharray: 3 4; }
+.bp-plate.is-on .bp-lead { stroke: var(--accent); stroke-dasharray: none; }
+.bp-tag {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; fill: var(--ink-4);
+}
+.bp-val { font-family: var(--mono); font-size: 12px; fill: var(--ink-2); }
+.bp-val-bad { fill: var(--critical); }
+
+/* the sweep: idle motion, always running */
+.bp-scan { animation: sweep 5.2s linear infinite; }
+@keyframes sweep {
+  from { transform: translateY(0); }
+  to   { transform: translateY(500px); }
+}
+
+.spec-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.spec-row {
+  display: grid; grid-template-columns: 34px 1fr; gap: 16px; align-items: start;
+  padding: 16px 16px 16px 12px; border-radius: 11px; cursor: default;
+  border-left: 2px solid transparent;
+  transition: background .4s var(--ease), border-color .4s var(--ease), opacity .4s var(--ease);
+  opacity: .42;
+}
+.spec-row.is-on { opacity: 1; background: rgba(255,255,255,.022); border-left-color: var(--accent); }
+.spec-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.spec-n {
+  font-family: var(--mono); font-size: .76rem; line-height: 1.7; color: var(--ink-4);
+  transition: color .4s var(--ease);
+}
+.spec-row.is-on .spec-n { color: var(--accent); }
+.spec-row h3 {
+  font-size: 1rem; font-weight: 600; letter-spacing: -0.014em;
+  color: var(--ink); margin: 0 0 5px; line-height: 1.35;
+}
+.spec-row p { color: var(--ink-3); font-size: .88rem; line-height: 1.65; margin: 0; }
 
 /* bento */
 
@@ -1230,11 +1301,11 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 
 .cta { padding: 72px 28px 90px; text-align: center; }
 .cta h2 {
-  font-family: var(--serif); font-weight: 400;
+  font-family: var(--sans); font-weight: 600;
   font-size: clamp(2.1rem, 5vw, 3.4rem); line-height: 1.08;
   color: #f4f7fb; margin: 0 0 30px; padding-bottom: .05em;
 }
-.cta h2 em { font-style: italic; color: var(--accent-2); }
+.cta h2 em { font-style: normal; color: var(--accent-2); }
 .cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* ══════════════════════════════════════════════ footer */
@@ -1248,6 +1319,8 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 /* ══════════════════════════════════════════════ responsive */
 
 @media (max-width: 1000px) {
+  .spec-body { grid-template-columns: 1fr; gap: 26px; }
+  .spec { padding: 60px 28px; }
   .how-steps { grid-template-columns: 1fr; gap: 30px; }
   .how { padding: 60px 28px; }
   .showcase { grid-template-columns: 1fr; gap: 28px; padding: 56px 28px; }
@@ -1290,6 +1363,7 @@ main, .topbar, .foot { position: relative; z-index: 1; }
 @media (max-width: 680px) {
   .showcase { padding: 44px 16px; }
   .how { padding: 48px 16px; }
+  .spec { padding: 48px 16px; }
   .how-art { height: 170px; }
   .bento { grid-template-columns: 1fr; gap: 12px; }
   .bcard-wide { grid-column: span 1; }
