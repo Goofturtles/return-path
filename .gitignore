@@ -1,2 +1,4 @@
 shots/
 .playwright-mcp/
+# Intermediate renders: multi-MB, and only seamless.py cleans them up.
+img/cloud-*.png

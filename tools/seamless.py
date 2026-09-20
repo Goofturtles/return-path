@@ -52,15 +52,22 @@ for name in ('near', 'mid', 'far'):
     wrap, neighbour = seam_stats(band)
     ratio = wrap / neighbour if neighbour else float('inf')
 
+    if ratio > TOLERANCE:
+        # Keep the PNG and leave the shipped WebP alone: a bad re-run must not
+        # overwrite a good asset and delete the only source it could be redone
+        # from.
+        failed = True
+        print('%-5s %dx%d  wrap %.5f  neighbour %.5f  ratio %.2fx  SEAM VISIBLE '
+              '- kept %s, shipped asset untouched'
+              % (name, band.shape[1], band.shape[0], wrap, neighbour, ratio,
+                 os.path.basename(src)))
+        continue
+
     dst = os.path.join(IMG, 'cloud-%s.webp' % name)
     Image.fromarray(band, 'RGBA').save(dst, 'WEBP', quality=QUALITY, method=6)
     kb = os.path.getsize(dst) / 1024.0
-
-    verdict = 'seamless' if ratio <= TOLERANCE else 'SEAM VISIBLE'
-    if ratio > TOLERANCE:
-        failed = True
-    print('%-5s %dx%d  wrap %.5f  neighbour %.5f  ratio %.2fx  %6.1f kB  %s'
-          % (name, band.shape[1], band.shape[0], wrap, neighbour, ratio, kb, verdict))
+    print('%-5s %dx%d  wrap %.5f  neighbour %.5f  ratio %.2fx  %6.1f kB  seamless'
+          % (name, band.shape[1], band.shape[0], wrap, neighbour, ratio, kb))
     os.remove(src)
 
 print('done')

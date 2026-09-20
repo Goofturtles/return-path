@@ -890,6 +890,14 @@ main, .topbar, .foot { position: relative; z-index: 1; }
   .split { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 700px) {
+  /* Two of the three plates are parallax depth that is invisible at this
+     width, and they cost ~790 kB of download plus a large decoded bitmap on
+     exactly the devices least able to spare either. */
+  .cloud-mid, .cloud-far { display: none; }
+  .cloud-near { opacity: .34; }
+}
+
 @media (max-width: 760px) {
   .hero { padding: 54px 16px 60px; }
   .privacy-card { padding: 34px 22px 30px; border-radius: 14px; }
